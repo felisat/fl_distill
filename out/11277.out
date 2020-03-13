@@ -1,1 +1,0 @@
-[31mFATAL:  [0m container creation failed: unable to add /home/fe/fsattler/federated_learning/results to mount list: destination must be an absolute path
