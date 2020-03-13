@@ -1,0 +1,30 @@
+{ 
+
+"main" :
+[
+
+{
+	"dataset" : ["cifar10"], 
+	"net" : ["lenet_cifar"],
+	
+	"n_clients" : [1000],
+	"n_data" : [null],
+
+	"communication_rounds" : [1000],
+	"local_epochs" : [1, 3, 10],
+
+	"participation_rate" : [0.01, 0.1],
+	
+	"classes_per_client" : [2],
+	"batch_size" : [128],
+	"balancedness" : [1.0],
+
+	"pretrained" : [null],
+	"save_model" : [null],
+	"log_frequency" : [-100],
+	"log_path" : ["manyclients_big/"]
+}
+
+]
+
+}
