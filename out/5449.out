@@ -1,6 +1,0 @@
-Traceback (most recent call last):
-  File "/opt/code/federated_learning.py", line 106, in <module>
-    run()
-  File "/opt/code/federated_learning.py", line 95, in run
-    experiments_raw = json.load(CODE_PATH+data_file)[args.schedule]
-TypeError: must be str, not _io.TextIOWrapper
