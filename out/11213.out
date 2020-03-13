@@ -1,0 +1,63 @@
+Running 1 Experiments..
+
+Hyperparameters: 
+ - dataset                 cifar10
+ - net                     lenet_cifar
+ - n_clients               10
+ - n_data                  None
+ - communication_rounds    2
+ - local_epochs            1
+ - participation_rate      1.0
+ - classes_per_client      0
+ - batch_size              128
+ - balancedness            1.0
+ - pretrained              None
+ - save_model              None
+ - log_frequency           1
+ - log_path                test/
+ - finished                False
+ - log_id                  6721
+
+Files already downloaded and verified
+Files already downloaded and verified
+Data split:
+ - Client 0: [486 517 497 492 510 501 466 522 506 503]
+ - Client 1: [528 525 467 490 499 521 507 479 489 495]
+ - Client 2: [499 511 490 485 521 489 540 478 488 499]
+ - Client 3: [474 508 523 508 504 519 495 466 516 487]
+ - Client 4: [471 511 479 482 504 522 483 535 509 504]
+ - Client 5: [523 484 500 530 489 493 520 485 480 496]
+ - Client 6: [538 504 496 539 475 493 470 495 502 488]
+ - Client 7: [506 467 504 501 517 478 507 510 501 509]
+ - Client 8: [506 489 543 466 481 497 509 518 484 507]
+ - Client 9: [469 484 501 507 500 487 503 512 525 512]
+
+Model:
+ - conv1.weight                   [6, 3, 5, 5]
+ - conv1.bias                     [6]
+ - conv2.weight                   [16, 6, 5, 5]
+ - conv2.bias                     [16]
+ - fc1.weight                     [120, 400]
+ - fc1.bias                       [120]
+ - fc2.weight                     [84, 120]
+ - fc2.bias                       [84]
+ - fc3.weight                     [10, 84]
+ - fc3.bias                       [10]
+Total number of Parameters:  62006
+
+Start Distributed Training..
+
+Experiment: main (1/1)
+{'communication_round': 1, 'lr': 0.002, 'epochs': 1}
+{'client_train_loss': 2.3056202850341796}
+{'server_val_accuracy': 0.096}
+Saved results to  /mnt/output/test/xp_6721.npz
+Remaining Time (approx.): 00:00:09 [50.00%]
+
+Experiment: main (1/1)
+{'communication_round': 2, 'lr': 0.002, 'epochs': 2}
+{'client_train_loss': 2.3035647033691404}
+{'server_val_accuracy': 0.108}
+Saved results to  /mnt/output/test/xp_6721.npz
+Remaining Time (approx.): 00:00:00 [100.00%]
+
