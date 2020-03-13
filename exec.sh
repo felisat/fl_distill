@@ -19,7 +19,7 @@ hyperparameters=' [{
 
 	"participation_rate" : [1.0, 0.1],
 	
-	"classes_per_client" : [0],
+	"classes_per_client" : [0, 2],
 	"batch_size" : [128],
 	"balancedness" : [1.0],
 

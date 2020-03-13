@@ -66,6 +66,8 @@ class Experiment():
 
     def is_log_round(self, c_round):
         log_freq = self.hyperparameters['log_frequency']
+        if log_freq < 0:
+            log_freq = np.ceil(self.hyperparameters['communication_rounds']/(-log_freq)).astype('int') 
         if c_round == self.hyperparameters['communication_rounds']:
             self.hyperparameters['finished'] = True
 
