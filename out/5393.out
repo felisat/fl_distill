@@ -1,0 +1,70 @@
+Running 1 Experiments..
+
+Hyperparameters: 
+ - dataset                 cifar10
+ - net                     lenet_cifar
+ - n_clients               10
+ - n_data                  None
+ - communication_rounds    3
+ - local_epochs            1
+ - participation_rate      1.0
+ - classes_per_client      0
+ - batch_size              128
+ - balancedness            1.0
+ - pretrained              None
+ - save_model              None
+ - log_frequency           1
+ - log_path                /opt/code/test
+ - finished                False
+ - log_id                  90557
+
+Files already downloaded and verified
+Files already downloaded and verified
+Data split:
+ - Client 0: [470 447 532 516 520 494 543 478 503 497]
+ - Client 1: [483 527 483 503 484 494 483 528 516 499]
+ - Client 2: [501 530 483 504 507 521 468 505 488 493]
+ - Client 3: [496 459 544 490 484 484 521 539 476 507]
+ - Client 4: [521 484 532 491 517 473 480 536 493 473]
+ - Client 5: [497 492 504 513 511 499 502 489 500 493]
+ - Client 6: [522 518 454 476 497 500 518 476 530 509]
+ - Client 7: [474 526 502 522 497 506 498 477 495 503]
+ - Client 8: [510 535 471 484 474 525 488 512 503 498]
+ - Client 9: [526 482 495 501 509 504 499 460 496 528]
+
+Model:
+ - conv1.weight                   [6, 3, 5, 5]
+ - conv1.bias                     [6]
+ - conv2.weight                   [16, 6, 5, 5]
+ - conv2.bias                     [16]
+ - fc1.weight                     [120, 400]
+ - fc1.bias                       [120]
+ - fc2.weight                     [84, 120]
+ - fc2.bias                       [84]
+ - fc3.weight                     [10, 84]
+ - fc3.bias                       [10]
+Total number of Parameters:  62006
+
+Start Distributed Training..
+
+Experiment: main (1/1)
+{'communication_round': 1, 'lr': 0.002, 'epochs': 1}
+{'client_train_loss': 2.3064144668579103}
+{'server_val_accuracy': 0.1017}
+Saved results to  /opt/code/testxp_90557.npz
+Remaining Time (approx.): 00:00:19 [33.33%]
+
+Experiment: main (1/1)
+{'communication_round': 2, 'lr': 0.002, 'epochs': 2}
+{'client_train_loss': 2.2988116847991944}
+{'server_val_accuracy': 0.1276}
+Saved results to  /opt/code/testxp_90557.npz
+Remaining Time (approx.): 00:00:09 [66.67%]
+
+Experiment: main (1/1)
+{'communication_round': 3, 'lr': 0.002, 'epochs': 3}
+{'client_train_loss': 2.2884846214294434}
+{'server_val_accuracy': 0.1623}
+Saved results to  /opt/code/testxp_90557.npz
+Remaining Time (approx.): 00:00:00 [100.00%]
+

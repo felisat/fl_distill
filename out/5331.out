@@ -1,0 +1,749 @@
+Running 1 Experiments..
+
+Hyperparameters: 
+ - dataset                 cifar10
+ - net                     lenet_cifar
+ - n_clients               10
+ - n_data                  None
+ - communication_rounds    100
+ - local_epochs            1
+ - participation_rate      1.0
+ - classes_per_client      0
+ - batch_size              128
+ - balancedness            1.0
+ - pretrained              None
+ - save_model              None
+ - log_frequency           1
+ - log_path                results/trash/
+ - finished                False
+ - log_id                  17029
+
+Files already downloaded and verified
+Files already downloaded and verified
+Data split:
+ - Client 0: [501 470 503 520 518 479 474 521 507 507]
+ - Client 1: [502 507 487 491 487 514 572 480 491 469]
+ - Client 2: [497 512 490 522 524 495 465 487 523 485]
+ - Client 3: [456 518 503 513 479 527 501 532 490 481]
+ - Client 4: [491 501 518 521 481 488 496 498 502 504]
+ - Client 5: [530 503 521 476 480 502 503 485 488 512]
+ - Client 6: [487 484 495 468 522 495 509 514 481 545]
+ - Client 7: [520 481 458 524 519 506 492 474 524 502]
+ - Client 8: [530 498 529 499 498 496 492 480 477 501]
+ - Client 9: [486 526 496 466 492 498 496 529 517 494]
+
+Model:
+ - conv1.weight                   [6, 3, 5, 5]
+ - conv1.bias                     [6]
+ - conv2.weight                   [16, 6, 5, 5]
+ - conv2.bias                     [16]
+ - fc1.weight                     [120, 400]
+ - fc1.bias                       [120]
+ - fc2.weight                     [84, 120]
+ - fc2.bias                       [84]
+ - fc3.weight                     [10, 84]
+ - fc3.bias                       [10]
+Total number of Parameters:  62006
+
+Start Distributed Training..
+
+Experiment: main (1/1)
+{'communication_round': 1, 'lr': 0.002, 'epochs': 1}
+{'client_train_loss': 2.3037508571624756}
+{'server_val_accuracy': 0.1112}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:16:19 [1.00%]
+
+Experiment: main (1/1)
+{'communication_round': 2, 'lr': 0.002, 'epochs': 2}
+{'client_train_loss': 2.2988441020965578}
+{'server_val_accuracy': 0.1249}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:15:19 [2.00%]
+
+Experiment: main (1/1)
+{'communication_round': 3, 'lr': 0.002, 'epochs': 3}
+{'client_train_loss': 2.2926193534851076}
+{'server_val_accuracy': 0.1628}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:14:53 [3.00%]
+
+Experiment: main (1/1)
+{'communication_round': 4, 'lr': 0.002, 'epochs': 4}
+{'client_train_loss': 2.2827702011108397}
+{'server_val_accuracy': 0.1774}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:14:34 [4.00%]
+
+Experiment: main (1/1)
+{'communication_round': 5, 'lr': 0.002, 'epochs': 5}
+{'client_train_loss': 2.260012895965576}
+{'server_val_accuracy': 0.1779}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:14:20 [5.00%]
+
+Experiment: main (1/1)
+{'communication_round': 6, 'lr': 0.002, 'epochs': 6}
+{'client_train_loss': 2.218798099899292}
+{'server_val_accuracy': 0.212}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:14:08 [6.00%]
+
+Experiment: main (1/1)
+{'communication_round': 7, 'lr': 0.002, 'epochs': 7}
+{'client_train_loss': 2.1379776027679442}
+{'server_val_accuracy': 0.2457}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:13:56 [7.00%]
+
+Experiment: main (1/1)
+{'communication_round': 8, 'lr': 0.002, 'epochs': 8}
+{'client_train_loss': 2.080061610031128}
+{'server_val_accuracy': 0.2739}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:13:44 [8.00%]
+
+Experiment: main (1/1)
+{'communication_round': 9, 'lr': 0.002, 'epochs': 9}
+{'client_train_loss': 2.0275292139053347}
+{'server_val_accuracy': 0.2857}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:13:33 [9.00%]
+
+Experiment: main (1/1)
+{'communication_round': 10, 'lr': 0.002, 'epochs': 10}
+{'client_train_loss': 2.003996647644043}
+{'server_val_accuracy': 0.2947}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:13:23 [10.00%]
+
+Experiment: main (1/1)
+{'communication_round': 11, 'lr': 0.002, 'epochs': 11}
+{'client_train_loss': 1.9889384593963624}
+{'server_val_accuracy': 0.2979}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:13:14 [11.00%]
+
+Experiment: main (1/1)
+{'communication_round': 12, 'lr': 0.002, 'epochs': 12}
+{'client_train_loss': 1.9467837034225464}
+{'server_val_accuracy': 0.3067}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:13:04 [12.00%]
+
+Experiment: main (1/1)
+{'communication_round': 13, 'lr': 0.002, 'epochs': 13}
+{'client_train_loss': 1.9267766723632813}
+{'server_val_accuracy': 0.3197}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:12:54 [13.00%]
+
+Experiment: main (1/1)
+{'communication_round': 14, 'lr': 0.002, 'epochs': 14}
+{'client_train_loss': 1.903628469467163}
+{'server_val_accuracy': 0.3262}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:12:44 [14.00%]
+
+Experiment: main (1/1)
+{'communication_round': 15, 'lr': 0.002, 'epochs': 15}
+{'client_train_loss': 1.8666675624847413}
+{'server_val_accuracy': 0.34}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:12:35 [15.00%]
+
+Experiment: main (1/1)
+{'communication_round': 16, 'lr': 0.002, 'epochs': 16}
+{'client_train_loss': 1.854495273590088}
+{'server_val_accuracy': 0.3516}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:12:25 [16.00%]
+
+Experiment: main (1/1)
+{'communication_round': 17, 'lr': 0.002, 'epochs': 17}
+{'client_train_loss': 1.7783785078048706}
+{'server_val_accuracy': 0.3597}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:12:16 [17.00%]
+
+Experiment: main (1/1)
+{'communication_round': 18, 'lr': 0.002, 'epochs': 18}
+{'client_train_loss': 1.7892352779388427}
+{'server_val_accuracy': 0.3723}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:12:07 [18.00%]
+
+Experiment: main (1/1)
+{'communication_round': 19, 'lr': 0.002, 'epochs': 19}
+{'client_train_loss': 1.7751875522613525}
+{'server_val_accuracy': 0.3763}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:11:58 [19.00%]
+
+Experiment: main (1/1)
+{'communication_round': 20, 'lr': 0.002, 'epochs': 20}
+{'client_train_loss': 1.7675912553787232}
+{'server_val_accuracy': 0.3879}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:11:48 [20.00%]
+
+Experiment: main (1/1)
+{'communication_round': 21, 'lr': 0.002, 'epochs': 21}
+{'client_train_loss': 1.7359298582077027}
+{'server_val_accuracy': 0.3968}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:11:39 [21.00%]
+
+Experiment: main (1/1)
+{'communication_round': 22, 'lr': 0.002, 'epochs': 22}
+{'client_train_loss': 1.7194427261352538}
+{'server_val_accuracy': 0.4006}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:11:30 [22.00%]
+
+Experiment: main (1/1)
+{'communication_round': 23, 'lr': 0.002, 'epochs': 23}
+{'client_train_loss': 1.6872940088272095}
+{'server_val_accuracy': 0.3999}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:11:21 [23.00%]
+
+Experiment: main (1/1)
+{'communication_round': 24, 'lr': 0.002, 'epochs': 24}
+{'client_train_loss': 1.6853787847518922}
+{'server_val_accuracy': 0.4077}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:11:12 [24.00%]
+
+Experiment: main (1/1)
+{'communication_round': 25, 'lr': 0.002, 'epochs': 25}
+{'client_train_loss': 1.6510694705963134}
+{'server_val_accuracy': 0.4143}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:11:03 [25.00%]
+
+Experiment: main (1/1)
+{'communication_round': 26, 'lr': 0.002, 'epochs': 26}
+{'client_train_loss': 1.6485807800292969}
+{'server_val_accuracy': 0.4188}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:10:54 [26.00%]
+
+Experiment: main (1/1)
+{'communication_round': 27, 'lr': 0.002, 'epochs': 27}
+{'client_train_loss': 1.656402676963806}
+{'server_val_accuracy': 0.4246}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:10:45 [27.00%]
+
+Experiment: main (1/1)
+{'communication_round': 28, 'lr': 0.002, 'epochs': 28}
+{'client_train_loss': 1.625484045791626}
+{'server_val_accuracy': 0.4264}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:10:36 [28.00%]
+
+Experiment: main (1/1)
+{'communication_round': 29, 'lr': 0.002, 'epochs': 29}
+{'client_train_loss': 1.6066105613708497}
+{'server_val_accuracy': 0.432}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:10:27 [29.00%]
+
+Experiment: main (1/1)
+{'communication_round': 30, 'lr': 0.002, 'epochs': 30}
+{'client_train_loss': 1.6011223691940308}
+{'server_val_accuracy': 0.4367}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:10:18 [30.00%]
+
+Experiment: main (1/1)
+{'communication_round': 31, 'lr': 0.002, 'epochs': 31}
+{'client_train_loss': 1.5738563777923584}
+{'server_val_accuracy': 0.4392}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:10:09 [31.00%]
+
+Experiment: main (1/1)
+{'communication_round': 32, 'lr': 0.002, 'epochs': 32}
+{'client_train_loss': 1.581572920036316}
+{'server_val_accuracy': 0.4419}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:10:00 [32.00%]
+
+Experiment: main (1/1)
+{'communication_round': 33, 'lr': 0.002, 'epochs': 33}
+{'client_train_loss': 1.5577573566436766}
+{'server_val_accuracy': 0.4519}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:09:52 [33.00%]
+
+Experiment: main (1/1)
+{'communication_round': 34, 'lr': 0.002, 'epochs': 34}
+{'client_train_loss': 1.540814584350586}
+{'server_val_accuracy': 0.454}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:09:43 [34.00%]
+
+Experiment: main (1/1)
+{'communication_round': 35, 'lr': 0.002, 'epochs': 35}
+{'client_train_loss': 1.5170809268951415}
+{'server_val_accuracy': 0.462}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:09:34 [35.00%]
+
+Experiment: main (1/1)
+{'communication_round': 36, 'lr': 0.002, 'epochs': 36}
+{'client_train_loss': 1.5258845180511476}
+{'server_val_accuracy': 0.4621}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:09:25 [36.00%]
+
+Experiment: main (1/1)
+{'communication_round': 37, 'lr': 0.002, 'epochs': 37}
+{'client_train_loss': 1.4467433727264405}
+{'server_val_accuracy': 0.4657}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:09:16 [37.00%]
+
+Experiment: main (1/1)
+{'communication_round': 38, 'lr': 0.002, 'epochs': 38}
+{'client_train_loss': 1.4928038440704345}
+{'server_val_accuracy': 0.4723}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:09:07 [38.00%]
+
+Experiment: main (1/1)
+{'communication_round': 39, 'lr': 0.002, 'epochs': 39}
+{'client_train_loss': 1.486242601299286}
+{'server_val_accuracy': 0.4762}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:08:59 [39.00%]
+
+Experiment: main (1/1)
+{'communication_round': 40, 'lr': 0.002, 'epochs': 40}
+{'client_train_loss': 1.4660716543197632}
+{'server_val_accuracy': 0.4778}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:08:50 [40.00%]
+
+Experiment: main (1/1)
+{'communication_round': 41, 'lr': 0.002, 'epochs': 41}
+{'client_train_loss': 1.4666488052368165}
+{'server_val_accuracy': 0.481}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:08:42 [41.00%]
+
+Experiment: main (1/1)
+{'communication_round': 42, 'lr': 0.002, 'epochs': 42}
+{'client_train_loss': 1.4674395030975342}
+{'server_val_accuracy': 0.4837}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:08:34 [42.00%]
+
+Experiment: main (1/1)
+{'communication_round': 43, 'lr': 0.002, 'epochs': 43}
+{'client_train_loss': 1.4356378868103028}
+{'server_val_accuracy': 0.4887}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:08:26 [43.00%]
+
+Experiment: main (1/1)
+{'communication_round': 44, 'lr': 0.002, 'epochs': 44}
+{'client_train_loss': 1.4300475942611695}
+{'server_val_accuracy': 0.49}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:08:20 [44.00%]
+
+Experiment: main (1/1)
+{'communication_round': 45, 'lr': 0.002, 'epochs': 45}
+{'client_train_loss': 1.42455405292511}
+{'server_val_accuracy': 0.496}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:08:11 [45.00%]
+
+Experiment: main (1/1)
+{'communication_round': 46, 'lr': 0.002, 'epochs': 46}
+{'client_train_loss': 1.416474084854126}
+{'server_val_accuracy': 0.4958}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:08:02 [46.00%]
+
+Experiment: main (1/1)
+{'communication_round': 47, 'lr': 0.002, 'epochs': 47}
+{'client_train_loss': 1.411378554534912}
+{'server_val_accuracy': 0.5008}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:07:54 [47.00%]
+
+Experiment: main (1/1)
+{'communication_round': 48, 'lr': 0.002, 'epochs': 48}
+{'client_train_loss': 1.408893704032898}
+{'server_val_accuracy': 0.5005}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:07:45 [48.00%]
+
+Experiment: main (1/1)
+{'communication_round': 49, 'lr': 0.002, 'epochs': 49}
+{'client_train_loss': 1.394329467201233}
+{'server_val_accuracy': 0.5046}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:07:37 [49.00%]
+
+Experiment: main (1/1)
+{'communication_round': 50, 'lr': 0.002, 'epochs': 50}
+{'client_train_loss': 1.4184935718536378}
+{'server_val_accuracy': 0.5045}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:07:28 [50.00%]
+
+Experiment: main (1/1)
+{'communication_round': 51, 'lr': 0.002, 'epochs': 51}
+{'client_train_loss': 1.3885126733779907}
+{'server_val_accuracy': 0.5099}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:07:19 [51.00%]
+
+Experiment: main (1/1)
+{'communication_round': 52, 'lr': 0.002, 'epochs': 52}
+{'client_train_loss': 1.3148736080169678}
+{'server_val_accuracy': 0.512}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:07:10 [52.00%]
+
+Experiment: main (1/1)
+{'communication_round': 53, 'lr': 0.002, 'epochs': 53}
+{'client_train_loss': 1.3697842906951905}
+{'server_val_accuracy': 0.5165}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:07:01 [53.00%]
+
+Experiment: main (1/1)
+{'communication_round': 54, 'lr': 0.002, 'epochs': 54}
+{'client_train_loss': 1.359414714050293}
+{'server_val_accuracy': 0.518}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:06:52 [54.00%]
+
+Experiment: main (1/1)
+{'communication_round': 55, 'lr': 0.002, 'epochs': 55}
+{'client_train_loss': 1.361173780822754}
+{'server_val_accuracy': 0.5213}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:06:43 [55.00%]
+
+Experiment: main (1/1)
+{'communication_round': 56, 'lr': 0.002, 'epochs': 56}
+{'client_train_loss': 1.3538882688522338}
+{'server_val_accuracy': 0.5232}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:06:34 [56.00%]
+
+Experiment: main (1/1)
+{'communication_round': 57, 'lr': 0.002, 'epochs': 57}
+{'client_train_loss': 1.344286476135254}
+{'server_val_accuracy': 0.5247}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:06:25 [57.00%]
+
+Experiment: main (1/1)
+{'communication_round': 58, 'lr': 0.002, 'epochs': 58}
+{'client_train_loss': 1.3396232286453247}
+{'server_val_accuracy': 0.5244}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:06:16 [58.00%]
+
+Experiment: main (1/1)
+{'communication_round': 59, 'lr': 0.002, 'epochs': 59}
+{'client_train_loss': 1.3306848337173462}
+{'server_val_accuracy': 0.5251}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:06:07 [59.00%]
+
+Experiment: main (1/1)
+{'communication_round': 60, 'lr': 0.002, 'epochs': 60}
+{'client_train_loss': 1.3178391761779784}
+{'server_val_accuracy': 0.5318}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:05:58 [60.00%]
+
+Experiment: main (1/1)
+{'communication_round': 61, 'lr': 0.002, 'epochs': 61}
+{'client_train_loss': 1.324304967880249}
+{'server_val_accuracy': 0.5341}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:05:49 [61.00%]
+
+Experiment: main (1/1)
+{'communication_round': 62, 'lr': 0.002, 'epochs': 62}
+{'client_train_loss': 1.3277606035232543}
+{'server_val_accuracy': 0.5361}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:05:40 [62.00%]
+
+Experiment: main (1/1)
+{'communication_round': 63, 'lr': 0.002, 'epochs': 63}
+{'client_train_loss': 1.2979305374145509}
+{'server_val_accuracy': 0.5384}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:05:31 [63.00%]
+
+Experiment: main (1/1)
+{'communication_round': 64, 'lr': 0.002, 'epochs': 64}
+{'client_train_loss': 1.2901062143325805}
+{'server_val_accuracy': 0.5408}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:05:22 [64.00%]
+
+Experiment: main (1/1)
+{'communication_round': 65, 'lr': 0.002, 'epochs': 65}
+{'client_train_loss': 1.2921095808029175}
+{'server_val_accuracy': 0.5406}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:05:13 [65.00%]
+
+Experiment: main (1/1)
+{'communication_round': 66, 'lr': 0.002, 'epochs': 66}
+{'client_train_loss': 1.285386580848694}
+{'server_val_accuracy': 0.5432}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:05:04 [66.00%]
+
+Experiment: main (1/1)
+{'communication_round': 67, 'lr': 0.002, 'epochs': 67}
+{'client_train_loss': 1.2873962116241455}
+{'server_val_accuracy': 0.543}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:04:55 [67.00%]
+
+Experiment: main (1/1)
+{'communication_round': 68, 'lr': 0.002, 'epochs': 68}
+{'client_train_loss': 1.268193371963501}
+{'server_val_accuracy': 0.5442}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:04:46 [68.00%]
+
+Experiment: main (1/1)
+{'communication_round': 69, 'lr': 0.002, 'epochs': 69}
+{'client_train_loss': 1.2837007946014405}
+{'server_val_accuracy': 0.5454}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:04:37 [69.00%]
+
+Experiment: main (1/1)
+{'communication_round': 70, 'lr': 0.002, 'epochs': 70}
+{'client_train_loss': 1.2810469203948975}
+{'server_val_accuracy': 0.5483}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:04:28 [70.00%]
+
+Experiment: main (1/1)
+{'communication_round': 71, 'lr': 0.002, 'epochs': 71}
+{'client_train_loss': 1.2559553098678589}
+{'server_val_accuracy': 0.5504}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:04:19 [71.00%]
+
+Experiment: main (1/1)
+{'communication_round': 72, 'lr': 0.002, 'epochs': 72}
+{'client_train_loss': 1.2636020112991333}
+{'server_val_accuracy': 0.552}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:04:10 [72.00%]
+
+Experiment: main (1/1)
+{'communication_round': 73, 'lr': 0.002, 'epochs': 73}
+{'client_train_loss': 1.255905687904358}
+{'server_val_accuracy': 0.5507}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:04:01 [73.00%]
+
+Experiment: main (1/1)
+{'communication_round': 74, 'lr': 0.002, 'epochs': 74}
+{'client_train_loss': 1.2068247831344605}
+{'server_val_accuracy': 0.5532}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:03:52 [74.00%]
+
+Experiment: main (1/1)
+{'communication_round': 75, 'lr': 0.002, 'epochs': 75}
+{'client_train_loss': 1.222252552986145}
+{'server_val_accuracy': 0.5555}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:03:43 [75.00%]
+
+Experiment: main (1/1)
+{'communication_round': 76, 'lr': 0.002, 'epochs': 76}
+{'client_train_loss': 1.2081349754333497}
+{'server_val_accuracy': 0.5558}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:03:34 [76.00%]
+
+Experiment: main (1/1)
+{'communication_round': 77, 'lr': 0.002, 'epochs': 77}
+{'client_train_loss': 1.2373128656387329}
+{'server_val_accuracy': 0.5586}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:03:25 [77.00%]
+
+Experiment: main (1/1)
+{'communication_round': 78, 'lr': 0.002, 'epochs': 78}
+{'client_train_loss': 1.2379958728790283}
+{'server_val_accuracy': 0.5609}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:03:16 [78.00%]
+
+Experiment: main (1/1)
+{'communication_round': 79, 'lr': 0.002, 'epochs': 79}
+{'client_train_loss': 1.2272110206604003}
+{'server_val_accuracy': 0.5622}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:03:07 [79.00%]
+
+Experiment: main (1/1)
+{'communication_round': 80, 'lr': 0.002, 'epochs': 80}
+{'client_train_loss': 1.2341758626937867}
+{'server_val_accuracy': 0.5627}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:02:58 [80.00%]
+
+Experiment: main (1/1)
+{'communication_round': 81, 'lr': 0.002, 'epochs': 81}
+{'client_train_loss': 1.2207026760101318}
+{'server_val_accuracy': 0.5639}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:02:49 [81.00%]
+
+Experiment: main (1/1)
+{'communication_round': 82, 'lr': 0.002, 'epochs': 82}
+{'client_train_loss': 1.17073712348938}
+{'server_val_accuracy': 0.5649}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:02:40 [82.00%]
+
+Experiment: main (1/1)
+{'communication_round': 83, 'lr': 0.002, 'epochs': 83}
+{'client_train_loss': 1.2265353513717652}
+{'server_val_accuracy': 0.5685}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:02:31 [83.00%]
+
+Experiment: main (1/1)
+{'communication_round': 84, 'lr': 0.002, 'epochs': 84}
+{'client_train_loss': 1.200858416557312}
+{'server_val_accuracy': 0.5689}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:02:22 [84.00%]
+
+Experiment: main (1/1)
+{'communication_round': 85, 'lr': 0.002, 'epochs': 85}
+{'client_train_loss': 1.1857114433288574}
+{'server_val_accuracy': 0.5667}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:02:13 [85.00%]
+
+Experiment: main (1/1)
+{'communication_round': 86, 'lr': 0.002, 'epochs': 86}
+{'client_train_loss': 1.1639265232086182}
+{'server_val_accuracy': 0.5727}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:02:04 [86.00%]
+
+Experiment: main (1/1)
+{'communication_round': 87, 'lr': 0.002, 'epochs': 87}
+{'client_train_loss': 1.1369030027389526}
+{'server_val_accuracy': 0.5726}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:01:55 [87.00%]
+
+Experiment: main (1/1)
+{'communication_round': 88, 'lr': 0.002, 'epochs': 88}
+{'client_train_loss': 1.2116580215454102}
+{'server_val_accuracy': 0.5746}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:01:46 [88.00%]
+
+Experiment: main (1/1)
+{'communication_round': 89, 'lr': 0.002, 'epochs': 89}
+{'client_train_loss': 1.2093794377326965}
+{'server_val_accuracy': 0.5755}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:01:38 [89.00%]
+
+Experiment: main (1/1)
+{'communication_round': 90, 'lr': 0.002, 'epochs': 90}
+{'client_train_loss': 1.1761630174636841}
+{'server_val_accuracy': 0.5746}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:01:29 [90.00%]
+
+Experiment: main (1/1)
+{'communication_round': 91, 'lr': 0.002, 'epochs': 91}
+{'client_train_loss': 1.1822229843139649}
+{'server_val_accuracy': 0.577}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:01:20 [91.00%]
+
+Experiment: main (1/1)
+{'communication_round': 92, 'lr': 0.002, 'epochs': 92}
+{'client_train_loss': 1.176145756149292}
+{'server_val_accuracy': 0.5768}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:01:11 [92.00%]
+
+Experiment: main (1/1)
+{'communication_round': 93, 'lr': 0.002, 'epochs': 93}
+{'client_train_loss': 1.1270089969635009}
+{'server_val_accuracy': 0.5818}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:01:02 [93.00%]
+
+Experiment: main (1/1)
+{'communication_round': 94, 'lr': 0.002, 'epochs': 94}
+{'client_train_loss': 1.179834899330139}
+{'server_val_accuracy': 0.5811}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:00:53 [94.00%]
+
+Experiment: main (1/1)
+{'communication_round': 95, 'lr': 0.002, 'epochs': 95}
+{'client_train_loss': 1.1503223465919494}
+{'server_val_accuracy': 0.5832}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:00:44 [95.00%]
+
+Experiment: main (1/1)
+{'communication_round': 96, 'lr': 0.002, 'epochs': 96}
+{'client_train_loss': 1.1460525091171265}
+{'server_val_accuracy': 0.5851}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:00:35 [96.00%]
+
+Experiment: main (1/1)
+{'communication_round': 97, 'lr': 0.002, 'epochs': 97}
+{'client_train_loss': 1.1811889989852906}
+{'server_val_accuracy': 0.5819}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:00:26 [97.00%]
+
+Experiment: main (1/1)
+{'communication_round': 98, 'lr': 0.002, 'epochs': 98}
+{'client_train_loss': 1.1578851242065429}
+{'server_val_accuracy': 0.5856}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:00:17 [98.00%]
+
+Experiment: main (1/1)
+{'communication_round': 99, 'lr': 0.002, 'epochs': 99}
+{'client_train_loss': 1.1283027221679687}
+{'server_val_accuracy': 0.5837}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:00:08 [99.00%]
+
+Experiment: main (1/1)
+{'communication_round': 100, 'lr': 0.002, 'epochs': 100}
+{'client_train_loss': 1.123504370880127}
+{'server_val_accuracy': 0.5839}
+Saved results to  results/trash/xp_17029.npz
+Remaining Time (approx.): 00:00:00 [100.00%]
+
