@@ -24,7 +24,7 @@ hyperparameters=' [{
 	"lr" : [0.01],
 	"balancedness" : [1.0],
 
-	"swipe" : [{"lr" : ["e10", "float", 0.1, 0.001], "batch_size" : ["e2", "int", 8, 512], "weight_decay" : ["e10", "float", 1e-6, 1e-2]}],
+	"swipe" : [{"lr" : ["e10", "float", 0.1, 0.01], "batch_size" : ["e2", "int", 8, 512], "weight_decay" : ["e10", "float", 1e-6, 1e-2]}],
 
 	"pretrained" : [null],
 	"save_model" : [null],
