@@ -20,12 +20,12 @@ class Device(object):
   def evaluate(self, loader=None):
     return eval_op(self.model, self.loader if not loader else loader)
 
-  def save_model(self, path=None, name=None, verbose=False):
+  def save_model(self, path=None, name=None, verbose=True):
     if name:
       torch.save(self.model.state_dict(), path+name)
       if verbose: print("Saved model to", path+name)
 
-  def load_model(self, path=None, name=None, verbose=False):
+  def load_model(self, path=None, name=None, verbose=True):
     if name:
       self.model.load_state_dict(torch.load(path+name))
       if verbose: print("Loaded model from", path+name)

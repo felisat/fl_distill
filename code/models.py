@@ -82,7 +82,7 @@ def get_model(model):
 
   return  { "vgg16" : (vgg16, optim.SGD, {"lr":0.04, "momentum":0.9, "weight_decay":5e-5}),
             "vgg11s" : (vgg11s, optim.SGD, {"lr":0.04, "momentum":0.9, "weight_decay":5e-5}),
-              "lenet_cifar" : (lenet_cifar, optim.SGD, {"lr":0.002, "momentum":0.9, "weight_decay":5e-5})
+              "lenet_cifar" : (lenet_cifar, optim.SGD, {"lr":0.0015, "momentum":0.9, "weight_decay":0.005})
           }[model]
 
 

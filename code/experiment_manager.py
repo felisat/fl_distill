@@ -114,9 +114,9 @@ class Experiment():
             self.hyperparameters_ = {}
 
                 
-    def save_to_disc(self, path):
+    def save_to_disc(self, path, name):
         if path:
-            save_results(self.to_dict(), path, 'xp_'+str(self.hyperparameters['log_id']))
+            save_results(self.to_dict(), path+name, 'xp_'+str(self.hyperparameters['log_id']))
 
 
 

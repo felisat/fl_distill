@@ -9,14 +9,14 @@ from fl_devices import Client, Server
 
 if "vca" in os.popen('hostname').read().rstrip(): # Runs on Cluster
   CODE_PATH = "/opt/code/"
-  RESULTS_LARGE = "/mnt/output/"
-  RESULTS_SMALL = "/opt/small_files/"
+  CHECKPOINT_PATH = "/opt/checkpoints/"
+  RESULTS_PATH = "/opt/small_files/"
   DATA_PATH = "/opt/in_ram_data/"
 else:
   CODE_PATH = ""
-  RESULTS_SMALL = "/home/sattler/Workspace/PyTorch/Remote/fl_base/results/"
-  RESULTS_LARGE = "/home/sattler/Workspace/PyTorch/Remote/fl_base/checkpoints/"
+  RESULTS_PATH = "/home/sattler/Workspace/PyTorch/Remote/fl_base/results/"
   DATA_PATH = "/home/sattler/Data/PyTorch/"
+  CHECKPOINT_PATH = "/home/sattler/Workspace/PyTorch/Remote/fl_base/checkpoints/"
 
 
 np.set_printoptions(precision=4, suppress=True)
@@ -46,7 +46,7 @@ def run_experiments(experiments):
 
     clients = [Client(model_fn, optimizer_fn, loader) for loader in client_loaders]
     server = Server(model_fn, test_loader)
-    server.load_model(hp["pretrained"])
+    server.load_model(path=CHECKPOINT_PATH, name=hp["pretrained"])
 
     # print model
     models.print_model(server.model)
@@ -79,7 +79,7 @@ def run_experiments(experiments):
 
         # Save results to Disk
         try:
-          xp.save_to_disc(path=RESULTS_SMALL+hp['log_path'])
+          xp.save_to_disc(path=RESULTS_PATH, name=hp['log_path'])
         except:
           print("Saving results Failed!")
 
@@ -88,8 +88,8 @@ def run_experiments(experiments):
         print("Remaining Time (approx.):", '{:02d}:{:02d}:{:02d}'.format(e // 3600, (e % 3600 // 60), e % 60), 
                   "[{:.2f}%]\n".format(c_round/hp['communication_rounds']*100))
 
-      # Save model to disk
-      server.save_model(RESULTS_LARGE,hp["save_model"])
+    # Save model to disk
+    server.save_model(path=CHECKPOINT_PATH, name=hp["save_model"])
       
     # Delete objects to free up GPU memory
     del server; clients.clear()
