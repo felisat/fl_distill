@@ -24,12 +24,12 @@ hyperparameters=' [{
 	"lr" : [0.01],
 	"balancedness" : [1.0],
 
-	"swipe" : [{"lr" : ["e10", 0.1, 0.001]}],
+	"swipe" : [{"lr" : ["e10", "float", 0.1, 0.001], "batch_size" : ["e2", "int", 8, 512], "weight_decay" : ["e10", "float", 1e-6, 1e-2]}],
 
 	"pretrained" : [null],
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["test1/"],
+	"log_path" : ["test_hyperparameter2/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
