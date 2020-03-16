@@ -11,23 +11,23 @@ hyperparameters=' [{
 	"dataset" : ["cifar10"], 
 	"net" : ["lenet_cifar"],
 	
-	"n_clients" : [1],
-	"n_data" : [1000],
+	"n_clients" : [1000],
+	"n_data" : [null],
 
-	"communication_rounds" : [1],
-	"local_epochs" : [1],
+	"communication_rounds" : [1000],
+	"local_epochs" : [1, 3, 10],
 
-	"participation_rate" : [1.0],
+	"participation_rate" : [0.004, 0.016, 0.064],
 	
-	"classes_per_client" : [0],
+	"classes_per_client" : [0, 2],
 	"batch_size" : [16],
 
 	"balancedness" : [1.0],
 
 	"swipe" : [{}],
 
-	"pretrained" : ["lenet_cifar_1000data.pt"],
-	"save_model" : ["test.pt"],
+	"pretrained" : [null, "lenet_cifar_1000data.pt"],
+	"save_model" : [null],
 	"log_frequency" : [-100],
 	"log_path" : ["trash/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
