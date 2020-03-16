@@ -14,8 +14,8 @@ if "vca" in os.popen('hostname').read().rstrip(): # Runs on Cluster
   DATA_PATH = "/opt/in_ram_data/"
 else:
   CODE_PATH = ""
-  RESULTS_SMALL = "/home/sattler/Workspace/PyTorch/Remote/federated_learning/results/"
-  RESULTS_LARGE = ""
+  RESULTS_SMALL = "/home/sattler/Workspace/PyTorch/Remote/fl_base/results/"
+  RESULTS_LARGE = "/home/sattler/Workspace/PyTorch/Remote/fl_base/checkpoints/"
   DATA_PATH = "/home/sattler/Data/PyTorch/"
 
 
@@ -89,7 +89,7 @@ def run_experiments(experiments):
                   "[{:.2f}%]\n".format(c_round/hp['communication_rounds']*100))
 
       # Save model to disk
-      server.save_model(hp["save_model"])
+      server.save_model(RESULTS_LARGE,hp["save_model"])
       
     # Delete objects to free up GPU memory
     del server; clients.clear()

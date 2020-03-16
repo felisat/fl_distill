@@ -42,6 +42,8 @@ class Experiment():
             self.hyperparameters['finished'] = False
             self.hyperparameters['log_id'] = np.random.randint(100000)
 
+            self.hp_swipe()
+
 
     def __str__(self):
         selfname = "Hyperparameters: \n"
@@ -51,6 +53,18 @@ class Experiment():
 
     def __repr__(self):
         return self.__str__()
+
+    def hp_swipe(self):
+        if "swipe" in self.hyperparameters and self.hyperparameters["swipe"]:
+            for k, v in self.hyperparameters["swipe"].items():
+                if v[0]=="e10":
+                    self.hyperparameters[k] = 10**np.random.uniform(np.log10(v[1]), np.log10(v[2]))
+                    print("HEY")
+                if v[0]=="e2":
+                    self.hyperparameters[k] = 2**np.random.uniform(np.log2(v[1]), np.log2(v[2]))
+                if v[0]=="lin":
+                    self.hyperparameters[k] = np.random.uniform(v[1], v[2])
+
 
     def log(self, update_dict, printout=True, override=False):
         # update a result
@@ -99,14 +113,6 @@ class Experiment():
         else:
             self.hyperparameters_ = {}
 
-    def prepare(self, hp):
-        self.hyperparameters_ = {key : str(value) for key, value in hp.items()}
-        for key in ["communication_rounds", "compression_up", "accumulation_up", "compression_down", "accumulation_down",
-                    "batch_size", "lr", "aggregation", "log_frequency", "local_iterations", "net", "dataset"]:
-            try:
-                self.hyperparameters[key] = hp[key]
-            except:
-                pass
                 
     def save_to_disc(self, path):
         if path:
