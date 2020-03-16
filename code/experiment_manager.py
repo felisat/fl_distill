@@ -55,15 +55,16 @@ class Experiment():
         return self.__str__()
 
     def hp_swipe(self):
+        round2 = lambda x : np.round(x,2-int(np.log10(x)))
         if "swipe" in self.hyperparameters and self.hyperparameters["swipe"]:
             for k, v in self.hyperparameters["swipe"].items():
                 cast = int if v[1]=="int" else float
                 if v[0]=="e10":
-                    self.hyperparameters[k] = cast(10**np.random.uniform(np.log10(v[2]), np.log10(v[3])))
+                    self.hyperparameters[k] = cast(round2(10**np.random.uniform(np.log10(v[2]), np.log10(v[3]))))
                 if v[0]=="e2":
-                    self.hyperparameters[k] = cast(2**np.random.uniform(np.log2(v[2]), np.log2(v[3])))
+                    self.hyperparameters[k] = cast(round2(2**np.random.uniform(np.log2(v[2]), np.log2(v[3]))))
                 if v[0]=="lin":
-                    self.hyperparameters[k] = cast(np.random.uniform(v[2], v[3]))
+                    self.hyperparameters[k] = cast(round2(np.random.uniform(v[2], v[3])))
 
 
     def log(self, update_dict, printout=True, override=False):

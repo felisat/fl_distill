@@ -24,10 +24,10 @@ hyperparameters=' [{
 
 	"balancedness" : [1.0],
 
-	"swipe" : [[]],
+	"swipe" : [{"lr" : ["e10", "float", 0.001, 0.1]}],
 
-	"pretrained" : ["lenet_cifar_1000data.pt"],
-	"save_model" : ["test.pt"],
+	"pretrained" : [null],
+	"save_model" : [null],
 	"log_frequency" : [-100],
 	"log_path" : ["trash/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
