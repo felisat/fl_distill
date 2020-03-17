@@ -83,7 +83,7 @@ def train_op(model, loader, optimizer, epochs):
 
 
 def eval_op(model, loader):
-    model.eval()
+    model.train()
     samples, correct = 0, 0
 
     with torch.no_grad():

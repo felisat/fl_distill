@@ -76,6 +76,9 @@ def print_split(idcs, labels):
   n_labels = np.max(labels) + 1 
   print("Data split:")
   for i, idccs in enumerate(idcs):
-    split = np.sum(np.array(labels)[idccs].reshape(1,-1)==np.arange(n_labels).reshape(-1,1), axis=1)
-    print(" - Client {}: {}".format(i,split), flush=True)
+    if i < 10 or i>len(idcs)-10:
+      split = np.sum(np.array(labels)[idccs].reshape(1,-1)==np.arange(n_labels).reshape(-1,1), axis=1)
+      print(" - Client {}: {}".format(i,split), flush=True)
+    elif i==len(idcs)-10:
+      print(".  "*10+"\n"+".  "*10+"\n"+".  "*10)
   print()
