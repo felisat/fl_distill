@@ -25,7 +25,7 @@ def get_data(dataset, path):
 
 def get_loaders(train_data, test_data, n_clients=10, classes_per_client=0, batch_size=128, n_data=None):
 
-  subset_idcs = split_image_data(train_data.targets, n_clients, classes_per_client, n_data)
+  subset_idcs = split_image_data(train_data.train_labels, n_clients, classes_per_client, n_data)
   client_data = [torch.utils.data.Subset(train_data, subset_idcs[i]) for i in range(n_clients)]
  
   client_loaders = [torch.utils.data.DataLoader(subset, batch_size=batch_size, shuffle=True) for subset in client_data]
