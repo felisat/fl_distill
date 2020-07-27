@@ -9,9 +9,9 @@
 
 hyperparameters=' [{
 	"dataset" : ["cifar10"], 
-	"net" : ["mobilenetv2s", "mobilenetv2xs", "mobilenetv2", "mobilenetv2_gn"],
+	"net" : ["lenet_cifar"],
 	
-	"n_clients" : [1, 2, 10],
+	"n_clients" : [10],
 	"n_data" : [null],
 
 	"communication_rounds" : [100],

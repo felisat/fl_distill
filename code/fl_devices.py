@@ -60,6 +60,9 @@ class Server(Device):
   def aggregate_weight_updates(self, clients):
     reduce_add_average(target=self.W, sources=[client.dW for client in clients])
 
+
+  def distill
+
     
 
 
