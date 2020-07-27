@@ -1,2 +1,2 @@
-# fl_cluster
-federated learning on the vca cluster
+# fl_distill
+federated learning with model distillation on the vca cluster
