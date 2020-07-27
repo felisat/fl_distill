@@ -2,9 +2,9 @@ import torch, torchvision
 import numpy as np
 
 def get_mnist(path):
-  transforms = torchvision.transforms.Compose([torchvision.transforms.Resize((32, 32)),
-                                                torchvision.transforms.ToTensor(),    
-                                                torchvision.transforms.Normalize((0.1307,), (0.3081,))])
+  transforms = torchvision.transforms.Compose([ torchvision.transforms.ToTensor(),    
+                                                #torchvision.transforms.Normalize((0.1307,), (0.3081,))])
+                                                ])
   train_data = torchvision.datasets.MNIST(root=path+"MNIST", train=True, download=True, transform=transforms)
   test_data = torchvision.datasets.MNIST(root=path+"MNIST", train=False, download=True, transform=transforms)
 
@@ -12,16 +12,27 @@ def get_mnist(path):
 
 def get_cifar10(path):
   transforms = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
-                                          torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), 
-                                                               (0.2023, 0.1994, 0.2010))])
+                                          #torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), 
+                                          #                     (0.2023, 0.1994, 0.2010))])
+                                          ])
   train_data = torchvision.datasets.CIFAR10(root=path+"CIFAR", train=True, download=True, transform=transforms)
   test_data = torchvision.datasets.CIFAR10(root=path+"CIFAR", train=False, download=True, transform=transforms)
 
   return train_data, test_data
 
 
+def get_stl10(path):
+  transforms = torchvision.transforms.Compose([torchvision.transforms.Resize((32,32)),
+                                                                         torchvision.transforms.ToTensor()])
+
+  data = torchvision.datasets.STL10(root=path+"STL10", split='unlabeled', folds=None, 
+                             transform=transforms,
+                                    download=True)
+  return data
+
+
 def get_data(dataset, path):
-  return {"cifar10" : get_cifar10, "mnist" : get_mnist}[dataset](path)
+  return {"cifar10" : get_cifar10, "mnist" : get_mnist, "stl10" : get_stl10}[dataset](path)
 
 def get_loaders(train_data, test_data, n_clients=10, classes_per_client=0, batch_size=128, n_data=None):
 

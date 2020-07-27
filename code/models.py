@@ -168,12 +168,33 @@ class lenet_cifar(nn.Module):
         return x
 
 
+class lenet_mnist(torch.nn.Module):
+    def __init__(self):
+        super(lenet_mnist, self).__init__()
+        self.conv1 = torch.nn.Conv2d(1, 6, 5)
+        self.pool = torch.nn.MaxPool2d(2, 2)
+        self.conv2 = torch.nn.Conv2d(6, 16, 5)
+        self.fc1 = torch.nn.Linear(16 * 4 * 4, 120)
+        self.fc2 = torch.nn.Linear(120, 84)
+        self.fc3 = torch.nn.Linear(84, 62)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = x.view(-1, 16 * 4 * 4)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+
 
 def get_model(model):
 
   return  { "vgg16" : (vgg16, optim.SGD, {"lr":0.04, "momentum":0.9, "weight_decay":5e-5}),
             "vgg11s" : (vgg11s, optim.SGD, {"lr":0.04, "momentum":0.9, "weight_decay":5e-5}),
-              "lenet_cifar" : (lenet_cifar, optim.SGD, {"lr":0.0015, "momentum":0.9, "weight_decay":0.005}),
+              "lenet_cifar" : (lenet_cifar, optim.SGD, {"lr":0.01, "weight_decay":0.0}),
+              "lenet_mnist" : (lenet_mnist, optim.Adam, {"lr":0.001, "weight_decay":0.0}),
               "mobilenetv2" : (mobilenetv2, optim.SGD, {"lr" : 0.01, "momentum" :0.9, "weight_decay" :5e-4}),
               "mobilenetv2s" : (mobilenetv2s, optim.SGD, {"lr" : 0.01, "momentum" :0.9, "weight_decay" :5e-4}),
               "mobilenetv2xs" : (mobilenetv2xs, optim.SGD, {"lr" : 0.01, "momentum" :0.9, "weight_decay" :5e-4}),

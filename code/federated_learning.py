@@ -39,12 +39,14 @@ def run_experiment(xp, xp_count, n_experiments):
   model_fn, optimizer, optimizer_hp = models.get_model(hp["net"])
   optimizer_fn = lambda x : optimizer(x, **{k : hp[k] if k in hp else v for k, v in optimizer_hp.items()}) 
   train_data, test_data = data.get_data(hp["dataset"], DATA_PATH)
+  distill_data = data.get_data(hp["distill_dataset"], DATA_PATH)
 
   client_loaders, test_loader = data.get_loaders(train_data, test_data, n_clients=hp["n_clients"], 
-        classes_per_client=hp["classes_per_client"], batch_size=hp["batch_size"], n_data=hp["n_data"])
+        classes_per_client=hp["classes_per_client"], batch_size=hp["batch_size"], n_data=None)
+  distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=False)
 
   clients = [Client(model_fn, optimizer_fn, loader) for loader in client_loaders]
-  server = Server(model_fn, test_loader)
+  server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=0.001), test_loader, distill_loader)
   server.load_model(path=CHECKPOINT_PATH, name=hp["pretrained"])
 
   # print model
@@ -57,17 +59,23 @@ def run_experiment(xp, xp_count, n_experiments):
 
     participating_clients = server.select_clients(clients, hp["participation_rate"])
     
-    for client in participating_clients:
+    for client in tqdm(participating_clients):
       client.synchronize_with_server(server)
       train_stats = client.compute_weight_update(hp["local_epochs"])  
-      client.reset()
       
-    server.aggregate_weight_updates(clients)
+
+    if hp["aggregate"]:
+      server.aggregate_weight_updates(participating_clients)
+    
+    if hp["use_distillation"]:
+      server.distill(participating_clients, hp["distill_epochs"])
 
 
     # Logging
     if xp.is_log_round(c_round):
       print("Experiment: {} ({}/{})".format(args.schedule, xp_count+1, n_experiments))   
+
+      xp.log({"soft_labels" : clients[0].predict(next(iter(distill_loader))[0].cuda()).cpu().detach().numpy()})
       
       xp.log({'communication_round' : c_round, 'epochs' : c_round*hp['local_epochs']})
       xp.log({key : clients[0].optimizer.__dict__['param_groups'][0][key] for key in optimizer_hp})

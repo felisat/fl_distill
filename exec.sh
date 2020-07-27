@@ -9,28 +9,30 @@
 
 hyperparameters=' [{
 	"dataset" : ["cifar10"], 
-	"net" : ["lenet_cifar"],
+	"distill_dataset" : ["stl10"],
+	"net" : ["vgg11s"],
 	
 	"n_clients" : [10],
-	"n_data" : [null],
 
 	"communication_rounds" : [100],
-	"local_epochs" : [1],
+	"local_epochs" : [20],
+	"distill_epochs" : [1],
 
 	"participation_rate" : [1.0],
 	
 	"classes_per_client" : [0],
 	"batch_size" : [128],
 
+	"use_distillation" : [true],
+	"aggregate" : [false],
+
 
 	"balancedness" : [1.0],
-
-	"swipe" : [{}],
 
 	"pretrained" : [null],
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["mobilenets/"],
+	"log_path" : ["trash/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
