@@ -20,12 +20,12 @@ hyperparameters=' [{
 
 	"participation_rate" : [0.4],
 	
-	"classes_per_client" : [2],
+	"classes_per_client" : [0],
 	"batch_size" : [128],
 
-	"use_distillation" : [true, false],
+	"use_distillation" : [true],
 	"aggregate" : [true, false],
-	"compress" : [false],
+	"compress" : [true],
 
 
 	"balancedness" : [1.0],
