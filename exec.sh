@@ -43,7 +43,7 @@ if [[ "$HOSTNAME" == *"vca"* ]]; then # Cluster
 	source "/etc/slurm/local_job_dir.sh"
 
 	export SINGULARITY_BINDPATH="$LOCAL_DATA:/data,$LOCAL_JOB_DIR:/mnt/output,./code:/opt/code,./checkpoints:/opt/checkpoints,./results:/opt/small_files,$HOME/in_ram_data:/opt/in_ram_data"
-	singularity exec --nv $HOME/base_images/full.sif python -u /opt/code/federated_learning.py --hp="$hyperparameters"
+	singularity exec --nv $HOME/base_images/pytorch15.sif python -u /opt/code/federated_learning.py --hp="$hyperparameters"
 
 	mkdir -p results
 	cp -r ${LOCAL_JOB_DIR}/. ${SLURM_SUBMIT_DIR}/results	
