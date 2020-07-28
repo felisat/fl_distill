@@ -14,7 +14,7 @@ if "vca" in os.popen('hostname').read().rstrip(): # Runs on Cluster
   DATA_PATH = "/opt/in_ram_data/"
 else:
   CODE_PATH = ""
-  RESULTS_PATH = "/home/sattler/Workspace/PyTorch/Remote/fl_base/results/"
+  RESULTS_PATH = "results/"
   DATA_PATH = "/home/sattler/Data/PyTorch/"
   CHECKPOINT_PATH = "/home/sattler/Workspace/PyTorch/Remote/fl_base/checkpoints/"
 
@@ -68,14 +68,14 @@ def run_experiment(xp, xp_count, n_experiments):
       server.aggregate_weight_updates(participating_clients)
     
     if hp["use_distillation"]:
-      server.distill(participating_clients, hp["distill_epochs"])
+      server.distill(participating_clients, hp["distill_epochs"], compress=hp["compress"])
 
 
     # Logging
     if xp.is_log_round(c_round):
       print("Experiment: {} ({}/{})".format(args.schedule, xp_count+1, n_experiments))   
 
-      xp.log({"soft_labels" : clients[0].predict(next(iter(distill_loader))[0].cuda()).cpu().detach().numpy()})
+      xp.log({"soft_labels" : clients[0].predict(next(iter(distill_loader))[0].cuda(), compress=hp["compress"]).cpu().detach().numpy()})
       
       xp.log({'communication_round' : c_round, 'epochs' : c_round*hp['local_epochs']})
       xp.log({key : clients[0].optimizer.__dict__['param_groups'][0][key] for key in optimizer_hp})

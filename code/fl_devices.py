@@ -46,8 +46,19 @@ class Client(Device):
     train_stats = train_op(self.model, self.loader if not loader else loader, self.optimizer, epochs)
     return train_stats
 
-  def predict(self, x):
-    return nn.Softmax(1)(self.model(x)) 
+  def predict(self, x, compress=False):
+    y_ = nn.Softmax(1)(self.model(x))
+
+    if not compress:
+      return y_
+
+    else:
+      sample = (torch.cumsum(y_, dim=1)<torch.rand(size=(y_.shape[0],1)).to(device)).sum(dim=1)
+
+      t = torch.zeros_like(y_).to(device)
+      t[torch.arange(y_.shape[0]),sample] = 1
+
+      return t
 
     
  
@@ -63,9 +74,9 @@ class Server(Device):
     reduce_average(target=self.W, sources=[client.W for client in clients])
 
 
-  def distill(self, clients, epochs=1, loader=None):
+  def distill(self, clients, epochs=1, loader=None, compress=False):
     print("Distilling...")
-    distill_op(self.model, [client.model for client in clients], self.distill_loader if not loader else loader, self.optimizer, epochs)
+    return distill_op(self.model, clients, self.distill_loader if not loader else loader, self.optimizer, epochs, compress=compress)
 
     
 
@@ -93,14 +104,14 @@ def kulbach_leibler_divergence(predicted, target):
     return -(target * torch.log(predicted.clamp_min(1e-7))).sum(dim=-1).mean() - \
            -1*(target.clamp(min=1e-7) * torch.log(target.clamp(min=1e-7))).sum(dim=-1).mean()
 
-def distill_op(model, client_models, loader, optimizer, epochs):
+def distill_op(model, clients, loader, optimizer, epochs, compress=False):
     model.train()  
-    running_loss, samples = 0.0, 0
     for ep in range(epochs):
+      running_loss, samples = 0.0, 0
       for x, _ in tqdm(loader):   
         x = x.to(device)
 
-        y = torch.mean(torch.stack([nn.Softmax(1)(m(x)) for m in client_models]), dim=0)
+        y = torch.mean(torch.stack([client.predict(x, compress=compress) for client in clients]), dim=0)
 
         optimizer.zero_grad()
 
@@ -113,6 +124,10 @@ def distill_op(model, client_models, loader, optimizer, epochs):
 
         loss.backward()
         optimizer.step()  
+
+      print(running_loss/samples)
+
+
 
     return {"loss" : running_loss / samples}
 

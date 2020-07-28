@@ -18,7 +18,7 @@ def save_results(results_dict, path, name, verbose=True):
 
 
 def load_results(path, filename, verbose=True):
-    results_dict = np.load(path+filename)
+    results_dict = np.load(path+filename, allow_pickle=True)
 
     if verbose:
         print("Loaded results from "+path+filename)

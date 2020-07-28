@@ -12,19 +12,20 @@ hyperparameters=' [{
 	"distill_dataset" : ["stl10"],
 	"net" : ["vgg11s"],
 	
-	"n_clients" : [10],
+	"n_clients" : [20],
 
-	"communication_rounds" : [100],
+	"communication_rounds" : [60],
 	"local_epochs" : [20],
 	"distill_epochs" : [1],
 
-	"participation_rate" : [1.0],
+	"participation_rate" : [0.4],
 	
-	"classes_per_client" : [0],
+	"classes_per_client" : [2],
 	"batch_size" : [128],
 
-	"use_distillation" : [true],
-	"aggregate" : [false],
+	"use_distillation" : [true, false],
+	"aggregate" : [true, false],
+	"compress" : [false],
 
 
 	"balancedness" : [1.0],
@@ -32,7 +33,7 @@ hyperparameters=' [{
 	"pretrained" : [null],
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["trash/"],
+	"log_path" : ["distill_noniid/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
