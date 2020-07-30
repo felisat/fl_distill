@@ -16,7 +16,8 @@ hyperparameters=' [{
 
 	"communication_rounds" : [60],
 	"local_epochs" : [20],
-	"distill_epochs" : [1],
+	"distill_epochs" : [10],
+	"n_distill" : [100, 1000, 10000, 100000], 
 
 	"participation_rate" : [0.4],
 	
@@ -24,7 +25,7 @@ hyperparameters=' [{
 	"batch_size" : [128],
 
 	"use_distillation" : [true],
-	"aggregate" : [true, false],
+	"aggregate" : [false],
 	"compress" : [true],
 
 
@@ -33,7 +34,7 @@ hyperparameters=' [{
 	"pretrained" : [null],
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["distill_noniid/"],
+	"log_path" : ["n_distill/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
@@ -50,7 +51,6 @@ if [[ "$HOSTNAME" == *"vca"* ]]; then # Cluster
 
 
 else # Local
-	source activate dcfl
 	python -u code/federated_learning.py --hp="$hyperparameters"
 
 

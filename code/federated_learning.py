@@ -40,6 +40,7 @@ def run_experiment(xp, xp_count, n_experiments):
   optimizer_fn = lambda x : optimizer(x, **{k : hp[k] if k in hp else v for k, v in optimizer_hp.items()}) 
   train_data, test_data = data.get_data(hp["dataset"], DATA_PATH)
   distill_data = data.get_data(hp["distill_dataset"], DATA_PATH)
+  distill_data = torch.utils.data.Subset(distill_data, np.random.permutation(len(distill_data))[:hp["n_distill"]])
 
   client_loaders, test_loader = data.get_loaders(train_data, test_data, n_clients=hp["n_clients"], 
         classes_per_client=hp["classes_per_client"], batch_size=hp["batch_size"], n_data=None)
@@ -62,6 +63,8 @@ def run_experiment(xp, xp_count, n_experiments):
     for client in tqdm(participating_clients):
       client.synchronize_with_server(server)
       train_stats = client.compute_weight_update(hp["local_epochs"])  
+
+    xp.log(participating_clients[0].evaluate(server.loader))
       
 
     if hp["aggregate"]:
@@ -75,7 +78,7 @@ def run_experiment(xp, xp_count, n_experiments):
     if xp.is_log_round(c_round):
       print("Experiment: {} ({}/{})".format(args.schedule, xp_count+1, n_experiments))   
 
-      xp.log({"soft_labels" : clients[0].predict(next(iter(distill_loader))[0].cuda(), compress=hp["compress"]).cpu().detach().numpy()})
+      #xp.log({"soft_labels" : clients[0].predict(next(iter(distill_loader))[0].cuda(), compress=hp["compress"]).cpu().detach().numpy()})
       
       xp.log({'communication_round' : c_round, 'epochs' : c_round*hp['local_epochs']})
       xp.log({key : clients[0].optimizer.__dict__['param_groups'][0][key] for key in optimizer_hp})

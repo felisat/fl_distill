@@ -19,6 +19,7 @@ class Device(object):
     self.dW = {key : torch.zeros_like(value) for key, value in self.model.named_parameters()}
     self.W_old = {key : torch.zeros_like(value) for key, value in self.model.named_parameters()}
 
+    self.optimizer_fn = optimizer_fn
     self.optimizer = optimizer_fn(self.model.parameters())     
     
   def evaluate(self, loader=None):
@@ -53,6 +54,7 @@ class Client(Device):
       return y_
 
     else:
+
       sample = (torch.cumsum(y_, dim=1)<torch.rand(size=(y_.shape[0],1)).to(device)).sum(dim=1)
 
       t = torch.zeros_like(y_).to(device)
@@ -126,8 +128,6 @@ def distill_op(model, clients, loader, optimizer, epochs, compress=False):
         optimizer.step()  
 
       print(running_loss/samples)
-
-
 
     return {"loss" : running_loss / samples}
 
