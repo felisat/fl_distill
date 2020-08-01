@@ -7,17 +7,6 @@ import data, models
 import experiment_manager as xpm
 from fl_devices import Client, Server
 
-if "vca" in os.popen('hostname').read().rstrip(): # Runs on Cluster
-  CODE_PATH = "/opt/code/"
-  CHECKPOINT_PATH = "/opt/checkpoints/"
-  RESULTS_PATH = "/opt/small_files/"
-  DATA_PATH = "/opt/in_ram_data/"
-else:
-  CODE_PATH = ""
-  RESULTS_PATH = "results/"
-  DATA_PATH = "/home/sattler/Data/PyTorch/"
-  CHECKPOINT_PATH = "/home/sattler/Workspace/PyTorch/Remote/fl_base/checkpoints/"
-
 
 np.set_printoptions(precision=4, suppress=True)
 
