@@ -27,6 +27,11 @@ parser.add_argument("--start", default=0, type=int)
 parser.add_argument("--end", default=None, type=int)
 parser.add_argument("--reverse_order", default=False, type=bool)
 parser.add_argument("--hp", default=None, type=str)
+
+parser.add_argument("--DATA_PATH", default=None, type=str)
+parser.add_argument("--RESULTS_PATH", default=None, type=str)
+parser.add_argument("--CHECKPOINT_PATH", default=None, type=str)
+
 args = parser.parse_args()
 
 
@@ -38,8 +43,8 @@ def run_experiment(xp, xp_count, n_experiments):
   
   model_fn, optimizer, optimizer_hp = models.get_model(hp["net"])
   optimizer_fn = lambda x : optimizer(x, **{k : hp[k] if k in hp else v for k, v in optimizer_hp.items()}) 
-  train_data, test_data = data.get_data(hp["dataset"], DATA_PATH)
-  distill_data = data.get_data(hp["distill_dataset"], DATA_PATH)
+  train_data, test_data = data.get_data(hp["dataset"], args.DATA_PATH)
+  distill_data = data.get_data(hp["distill_dataset"], args.DATA_PATH)
   distill_data = torch.utils.data.Subset(distill_data, np.random.permutation(len(distill_data))[:hp["n_distill"]])
 
   client_loaders, test_loader = data.get_loaders(train_data, test_data, n_clients=hp["n_clients"], 
@@ -48,7 +53,7 @@ def run_experiment(xp, xp_count, n_experiments):
 
   clients = [Client(model_fn, optimizer_fn, loader) for loader in client_loaders]
   server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=0.001), test_loader, distill_loader)
-  server.load_model(path=CHECKPOINT_PATH, name=hp["pretrained"])
+  server.load_model(path=args.CHECKPOINT_PATH, name=hp["pretrained"])
 
   # print model
   models.print_model(server.model)
@@ -77,8 +82,6 @@ def run_experiment(xp, xp_count, n_experiments):
     # Logging
     if xp.is_log_round(c_round):
       print("Experiment: {} ({}/{})".format(args.schedule, xp_count+1, n_experiments))   
-
-      #xp.log({"soft_labels" : clients[0].predict(next(iter(distill_loader))[0].cuda(), compress=hp["compress"]).cpu().detach().numpy()})
       
       xp.log({'communication_round' : c_round, 'epochs' : c_round*hp['local_epochs']})
       xp.log({key : clients[0].optimizer.__dict__['param_groups'][0][key] for key in optimizer_hp})
@@ -89,7 +92,7 @@ def run_experiment(xp, xp_count, n_experiments):
 
       # Save results to Disk
       try:
-        xp.save_to_disc(path=RESULTS_PATH, name=hp['log_path'])
+        xp.save_to_disc(path=args.RESULTS_PATH, name=hp['log_path'])
       except:
         print("Saving results Failed!")
 
@@ -99,7 +102,7 @@ def run_experiment(xp, xp_count, n_experiments):
                 "[{:.2f}%]\n".format(c_round/hp['communication_rounds']*100))
 
   # Save model to disk
-  server.save_model(path=CHECKPOINT_PATH, name=hp["save_model"])
+  server.save_model(path=args.CHECKPOINT_PATH, name=hp["save_model"])
     
   # Delete objects to free up GPU memory
   del server; clients.clear()
@@ -108,11 +111,9 @@ def run_experiment(xp, xp_count, n_experiments):
 
 def run():
 
-  if args.hp:
-    experiments_raw = json.loads(args.hp)
-  else:
-    with open(CODE_PATH+'federated_learning.json') as data_file:    
-      experiments_raw = json.load(data_file)[args.schedule]
+
+  experiments_raw = json.loads(args.hp)
+
 
   hp_dicts = [hp for x in experiments_raw for hp in xpm.get_all_hp_combinations(x)][args.start:args.end]
   if args.reverse_order:
