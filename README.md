@@ -5,13 +5,13 @@
 
 ### Run on local machine
 
-1.) Define paths
+1.) In `exec.sh` define paths
 
 	RESULTS_PATH="results/"
-	DATA_PATH="/home/sattler/Data/PyTorch/"
-	CHECKPOINT_PATH="checkpoints
+	DATA_PATH="/path/to/where/you/store/your/datasets"
+	CHECKPOINT_PATH="checkpoints/"
   
-2.) Set hyperparameters
+2.) and set the hyperparameters
   
     hyperparameters="[{...}]"
 
@@ -22,31 +22,31 @@
 ### Run on vca cluster
 
 
-1.) In your home directory on the server, create a folder "base_images/", containing the file pytorch15.def:
+1.) In your home directory on the server, create a folder `base_images/`, containing the file `pytorch15.def`:
 
-<<<<<<<<<<<< pytorch15.def >>>>>>>>>>>
-Bootstrap: docker
-From: pytorch/pytorch:latest
+	<<<<<<<<<<<< pytorch15.def >>>>>>>>>>>
+	Bootstrap: docker
+	From: pytorch/pytorch:latest
 
-%post
-    export "PATH=/opt/conda/bin:$PATH"
+	%post
+	export "PATH=/opt/conda/bin:$PATH"
 
-    conda install matplotlib
-    conda install numpy
-    conda install scipy
-    conda install tqdm
-<<<<<<<<<<<< pytorch15.def >>>>>>>>>>>
+	conda install matplotlib
+	conda install numpy
+	conda install scipy
+	conda install tqdm
+	<<<<<<<<<<<< pytorch15.def >>>>>>>>>>>
 
 2.) Run
 
     singularity build --force --fakeroot pytorch15.sif pytorch15.def
     
     
-3.) Create a folder "in_ram_data/" where you save your data sets (CIFAR, MNIST, ..)
+3.) Create a folder `in_ram_data/` where you save your data sets (CIFAR, MNIST, ..)
 
 4.) Change email address:
 
-    #SBATCH --mail-user=felix.sattler@hhi.fraunhofer.de
+    #SBATCH --mail-user=your.mail@hhi.fraunhofer.de
 
 4.) Run via
 
