@@ -41,9 +41,9 @@ hyperparameters=' [{
 
 if [[ "$HOSTNAME" == *"vca"* ]]; then # Cluster
 
-	RESULTS_PATH = "/opt/small_files/"
-	DATA_PATH = "/opt/in_ram_data/"
-	CHECKPOINT_PATH = "/opt/checkpoints/"
+	RESULTS_PATH="/opt/small_files/"
+	DATA_PATH="/opt/in_ram_data/"
+	CHECKPOINT_PATH="/opt/checkpoints/"
 
 	echo $hyperparameters
 	source "/etc/slurm/local_job_dir.sh"
