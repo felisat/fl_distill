@@ -48,11 +48,11 @@
 
     #SBATCH --mail-user=your.mail@hhi.fraunhofer.de
 
-4.) Run via
+5.) Run via
 
       sbatch exec.sh
      
-5.) Check if everything is working    
+6.) You can check if everything is working    
 
       watch tail -n 100 out/<SLURM_JOB_ID>.out 
       
