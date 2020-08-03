@@ -61,6 +61,7 @@
  
  ### Task
 - `"dataset"` : Choose from `["mnist", "cifar10"]`
+- `"distill_dataset"` : Choose from `["stl10"]`,
 - `"net"` : Choose from `["mobilenetv2", "lenet_mnist", "lenet_cifar", "vgg11", "vgg11s"]`
 
 ### Federated Learning Environment
@@ -71,11 +72,20 @@
 - `"batch_size"` : Batch-size used by the Clients
 - `"balancedness"` : Default 1.0, if <1.0 data will be more concentrated on some clients
 - `"communication_rounds"` : Total number of communication rounds
+- `"local_epochs"` : Local training epochs at every client
+- `"distill_epochs"` : Number of epochs used for distillation
+- `"n_distill"` : Size of the distilation dataset 
+- `"use_distillation"` : Train global model via distillation 
+- `"aggregate"` : Perform Federated Averaging step before distillation
+- `"compress"` : Compress soft labels before communication
 
 ### Logging 
 - `"log_frequency"` : Number of communication rounds after which results are logged and saved to disk
 - `"log_path"` : e.g. "results/experiment1/"
 
-Run multiple experiments by listing different configurations.
+Run multiple experiments by listing different configurations, e.g.
 
+	`"n_clients" : [10, 20, 50]`.
+
+	
 
