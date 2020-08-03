@@ -55,3 +55,27 @@
 5.) Check if everything is working    
 
       watch tail -n 100 out/<SLURM_JOB_ID>.out 
+      
+      
+ ## Hyperparameters
+ 
+ ### Task
+- `"dataset"` : Choose from `["mnist", "cifar10"]`
+- `"net"` : Choose from `["mobilenetv2", "lenet_mnist", "lenet_cifar", "vgg11", "vgg11s"]`
+
+### Federated Learning Environment
+
+- `"n_clients"` : Number of Clients
+- `"classes_per_client"` : Number of different Classes every Client holds in it's local data, 0 returns an iid split
+- `"participation_rate"` : Fraction of Clients which participate in every Communication Round
+- `"batch_size"` : Batch-size used by the Clients
+- `"balancedness"` : Default 1.0, if <1.0 data will be more concentrated on some clients
+- `"communication_rounds"` : Total number of communication rounds
+
+### Logging 
+- `"log_frequency"` : Number of communication rounds after which results are logged and saved to disk
+- `"log_path"` : e.g. "results/experiment1/"
+
+Run multiple experiments by listing different configurations.
+
+
