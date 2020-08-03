@@ -57,8 +57,6 @@ def run_experiment(xp, xp_count, n_experiments):
     for client in tqdm(participating_clients):
       client.synchronize_with_server(server)
       train_stats = client.compute_weight_update(hp["local_epochs"])  
-
-    xp.log(participating_clients[0].evaluate(server.loader))
       
 
     if hp["aggregate"]:
