@@ -87,5 +87,21 @@ Run multiple experiments by listing different configurations, e.g.
 
 	`"n_clients" : [10, 20, 50]`.
 
+## Logging and Visualizing 
+In `federated_learning.py`, calling
+
+	xp.log(dict)
+
+will save experiment results under given keys. Every experiment produces a summary which is stored in the directory specified in `"log_path"`. You can import all experiments stored in a certain directory via
+
+	import experiment_manager as xpm
+	list_of_experiments = xpm.get_list_of_experiments(path)
+	
+`list_of_experiments` contains `Experiment` objects with the hyperparameters and the results
+
+	xp.hyperparameters
+	xp.results
+	
+of the respective experiments.
 	
 
