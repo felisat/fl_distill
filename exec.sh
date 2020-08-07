@@ -33,7 +33,7 @@ hyperparameters=' [{
 	
 
 	"pretrained" : [null],
-	"pretrained_representation" : ["checkpoints/80epochsSTL10.pth"],
+	"pretrained_representation" : ["80epochsSTL10.pth"],
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
