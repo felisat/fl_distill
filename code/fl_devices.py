@@ -5,6 +5,8 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 
+from virtual_adversarial_training import VATLoss
+
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -47,20 +49,24 @@ class Client(Device):
     train_stats = train_op(self.model, self.loader if not loader else loader, self.optimizer, epochs)
     return train_stats
 
-  def predict(self, x, compress=False):
+  def predict(self, x):
     y_ = nn.Softmax(1)(self.model(x))
 
-    if not compress:
-      return y_
+    return y_
 
-    else:
 
-      sample = (torch.cumsum(y_, dim=1)<torch.rand(size=(y_.shape[0],1)).to(device)).sum(dim=1)
+  def predict_(self, x):
+    y_ = nn.Softmax(1)(self.model(x))
+    
+    amax = torch.argmax(y_, dim=1).detach()#(torch.cumsum(y_, dim=1)<torch.rand(size=(y_.shape[0],1))).sum(dim=1)
 
-      t = torch.zeros_like(y_).to(device)
-      t[torch.arange(y_.shape[0]),sample] = 1
+    t = torch.zeros_like(y_)
+    t[torch.arange(y_.shape[0]),amax] = 1
 
-      return t
+    return t
+
+
+
 
     
  
@@ -76,9 +82,9 @@ class Server(Device):
     reduce_average(target=self.W, sources=[client.W for client in clients])
 
 
-  def distill(self, clients, epochs=1, loader=None, compress=False):
+  def distill(self, clients, epochs=1, loader=None, compress=False, noise=False):
     print("Distilling...")
-    return distill_op(self.model, clients, self.distill_loader if not loader else loader, self.optimizer, epochs, compress=compress)
+    return distill_op(self.model, clients, self.distill_loader if not loader else loader, self.optimizer, epochs, compress=compress, noise=noise)
 
     
 
@@ -106,20 +112,47 @@ def kulbach_leibler_divergence(predicted, target):
     return -(target * torch.log(predicted.clamp_min(1e-7))).sum(dim=-1).mean() - \
            -1*(target.clamp(min=1e-7) * torch.log(target.clamp(min=1e-7))).sum(dim=-1).mean()
 
-def distill_op(model, clients, loader, optimizer, epochs, compress=False):
+
+def compress_soft_labels(y_):
+      sample = (torch.cumsum(y_, dim=1)<torch.rand(size=(y_.shape[0],1)).to(device)).sum(dim=1)
+
+      t = torch.zeros_like(y_).to(device)
+      t[torch.arange(y_.shape[0]),sample] = 1
+
+      return t
+
+
+def distill_op(model, clients, loader, optimizer, epochs, compress=False, noise=False):
     model.train()  
+
+    vat_loss = VATLoss(xi=10.0, eps=1.0, ip=1)
+
     for ep in range(epochs):
       running_loss, samples = 0.0, 0
       for x, _ in tqdm(loader):   
         x = x.to(device)
 
-        y = torch.mean(torch.stack([client.predict(x, compress=compress) for client in clients]), dim=0)
+        if not noise:
+          y = torch.mean(torch.stack([client.predict(x) for client in clients]), dim=0)
+        else:
+          hist = torch.sum(torch.stack([client.predict_(x) for client in clients]), dim=0)
+          hist += torch.randn_like(hist)
+
+          amax = torch.argmax(hist, dim=1)
+
+          y = torch.zeros_like(hist)
+          y[torch.arange(hist.shape[0]),amax] = 1
+
+
 
         optimizer.zero_grad()
+
+        #vat = vat_loss(model, x)
 
         y_ = nn.Softmax(1)(model(x))
 
         loss = kulbach_leibler_divergence(y_,y)#torch.mean(torch.sum(y_*(y_.log()-y.log()), dim=1))
+
  
         running_loss += loss.item()*y.shape[0]
         samples += y.shape[0]

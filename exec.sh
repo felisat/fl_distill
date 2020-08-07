@@ -10,7 +10,7 @@
 hyperparameters=' [{
 	"dataset" : ["cifar10"], 
 	"distill_dataset" : ["stl10"],
-	"net" : ["vgg11s"],
+	"net" : ["simclr_net"],
 	
 
 	"n_clients" : [20],
@@ -20,21 +20,24 @@ hyperparameters=' [{
 
 	"communication_rounds" : [60],
 	"participation_rate" : [0.4],
-	"local_epochs" : [2],
-	"distill_epochs" : [10],
-	"n_distill" : [100000], 
+	"local_epochs" : [20],
+	"distill_epochs" : [1],
+	"n_distill" : [null], 
 
 	
 	"batch_size" : [128],
-	"use_distillation" : [false],
+	"use_distillation" : [true],
 	"aggregate" : [true],
 	"compress" : [false],
+	"noise" : [false],
 	
 
 	"pretrained" : [null],
+	"pretrained_representation" : ["checkpoints/80epochsSTL10.pth"],
+
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["trash/"],
+	"log_path" : ["simclr_net/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 

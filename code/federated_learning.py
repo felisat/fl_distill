@@ -44,6 +44,10 @@ def run_experiment(xp, xp_count, n_experiments):
   server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=0.001), test_loader, distill_loader)
   server.load_model(path=args.CHECKPOINT_PATH, name=hp["pretrained"])
 
+  if hp["pretrained_representation"]:
+    server.model.load_state_dict(torch.load(hp["pretrained_representation"], map_location='cpu'), strict=False)
+    print("Successfully loader model from", hp["pretrained_representation"])
+
   # print model
   models.print_model(server.model)
 
@@ -63,7 +67,7 @@ def run_experiment(xp, xp_count, n_experiments):
       server.aggregate_weight_updates(participating_clients)
     
     if hp["use_distillation"]:
-      server.distill(participating_clients, hp["distill_epochs"], compress=hp["compress"])
+      server.distill(participating_clients, hp["distill_epochs"], compress=hp["compress"], noise=hp["noise"])
 
 
     # Logging
