@@ -18,26 +18,27 @@ hyperparameters=' [{
 	"balancedness" : [1.0],
 
 
-	"communication_rounds" : [60],
+	"communication_rounds" : [40],
 	"participation_rate" : [0.4],
 	"local_epochs" : [20],
-	"distill_epochs" : [1],
+	"distill_epochs" : [3],
 	"n_distill" : [null], 
 
 	
 	"batch_size" : [128],
-	"use_distillation" : [true],
-	"aggregate" : [true],
+	"use_distillation" : [true, false],
+	"aggregate" : [true, false],
 	"compress" : [false],
 	"noise" : [false],
+	"only_linear" : [true, false],
 	
 
 	"pretrained" : [null],
-	"pretrained_representation" : [null],
+	"pretrained_representation" : ["80epochsSTL10.pth", null],
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["simclr_net/"],
+	"log_path" : ["simclr_net2/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 

@@ -41,12 +41,17 @@ def run_experiment(xp, xp_count, n_experiments):
   distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=False)
 
   clients = [Client(model_fn, optimizer_fn, loader) for loader in client_loaders]
-  server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=0.001), test_loader, distill_loader)
+  server = Server(model_fn, lambda x : torch.optim.SGD(x, lr=0.01, momentum=0.9), test_loader, distill_loader)
   server.load_model(path=args.CHECKPOINT_PATH, name=hp["pretrained"])
 
   if hp["pretrained_representation"]:
     server.model.load_state_dict(torch.load(args.CHECKPOINT_PATH+hp["pretrained_representation"], map_location='cpu'), strict=False)
     print("Successfully loader model from", hp["pretrained_representation"])
+
+  if hp["only_linear"]:
+    for device in [server]+clients:
+      for param in device.model.f.parameters():
+        param.requires_grad = False
 
   # print model
   models.print_model(server.model)

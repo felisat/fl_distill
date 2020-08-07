@@ -252,7 +252,7 @@ def print_model(model):
   n = 0
   print("Model:")
   for key, value in model.named_parameters():
-    print(' -', '{:30}'.format(key), list(value.shape))
+    print(' -', '{:30}'.format(key), list(value.shape), "Requires Grad:", value.requires_grad)
     n += value.numel()
   print("Total number of Parameters: ", n) 
   print()
