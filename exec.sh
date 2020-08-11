@@ -36,7 +36,7 @@ hyperparameters=' [{
 	
 
 	"pretrained" : [null],
-	"pretrained_representation" : [null, "100EpochsSVHN.pth", "80epochsSTL10.pth"],
+	"pretrained_representations" : [{"svhn" : "100EpochsSVHN.pth", "stl10" : "80epochsSTL10.pth"}, null],
 
 	"save_model" : [null],
 	"log_frequency" : [-100],

@@ -44,9 +44,9 @@ def run_experiment(xp, xp_count, n_experiments):
   server = Server(model_fn, lambda x : torch.optim.SGD(x, lr=0.01, momentum=0.9), test_loader, distill_loader)
   server.load_model(path=args.CHECKPOINT_PATH, name=hp["pretrained"])
 
-  if hp["pretrained_representation"]:
-    server.model.load_state_dict(torch.load(args.CHECKPOINT_PATH+hp["pretrained_representation"], map_location='cpu'), strict=False)
-    print("Successfully loader model from", hp["pretrained_representation"])
+  if hp["pretrained_representations"]:
+    server.model.load_state_dict(torch.load(args.CHECKPOINT_PATH+hp["pretrained_representations"][hp["distill_dataset"]], map_location='cpu'), strict=False)
+    print("Successfully loader model from", hp["pretrained_representations"][hp["distill_dataset"]])
 
   if hp["only_linear"]:
     for device in [server]+clients:
