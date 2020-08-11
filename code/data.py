@@ -30,9 +30,17 @@ def get_stl10(path):
                                     download=True)
   return data
 
+def get_svhn(path):
+  transforms = torchvision.transforms.Compose([torchvision.transforms.Resize((32,32)),
+                                                                         torchvision.transforms.ToTensor()])
+
+  data = torchvision.datasets.SVHN(root=path+"SVHN", split='train', transform=transforms,
+                                    download=True)
+  return data
+
 
 def get_data(dataset, path):
-  return {"cifar10" : get_cifar10, "mnist" : get_mnist, "stl10" : get_stl10}[dataset](path)
+  return {"cifar10" : get_cifar10, "mnist" : get_mnist, "stl10" : get_stl10, "svhn" : get_svhn}[dataset](path)
 
 def get_loaders(train_data, test_data, n_clients=10, classes_per_client=0, batch_size=128, n_data=None):
 

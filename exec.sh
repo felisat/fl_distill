@@ -7,9 +7,11 @@
 #SBATCH --gpus=1
 
 
+cmdargs=$1
+
 hyperparameters=' [{
 	"dataset" : ["cifar10"], 
-	"distill_dataset" : ["stl10"],
+	"distill_dataset" : ["svhn", "stl10"],
 	"net" : ["simclr_net"],
 	
 
@@ -30,15 +32,15 @@ hyperparameters=' [{
 	"aggregate" : [true, false],
 	"compress" : [false],
 	"noise" : [false],
-	"only_linear" : [true, false],
+	"only_linear" : [false, true],
 	
 
 	"pretrained" : [null],
-	"pretrained_representation" : ["100EpochsSVHN.pth"],
+	"pretrained_representation" : [null, "100EpochsSVHN.pth", "80epochsSTL10.pth"],
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["simclr_net2/"],
+	"log_path" : ["pretrained_large/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
@@ -53,7 +55,7 @@ if [[ "$HOSTNAME" == *"vca"* ]]; then # Cluster
 	source "/etc/slurm/local_job_dir.sh"
 
 	export SINGULARITY_BINDPATH="$LOCAL_DATA:/data,$LOCAL_JOB_DIR:/mnt/output,./code:/opt/code,./checkpoints:/opt/checkpoints,./results:/opt/small_files,$HOME/in_ram_data:/opt/in_ram_data"
-	singularity exec --nv $HOME/base_images/pytorch15.sif python -u /opt/code/federated_learning.py --hp="$hyperparameters" --RESULTS_PATH="$RESULTS_PATH" --DATA_PATH="$DATA_PATH" --CHECKPOINT_PATH="$CHECKPOINT_PATH" 
+	singularity exec --nv $HOME/base_images/pytorch15.sif python -u /opt/code/federated_learning.py --hp="$hyperparameters" --RESULTS_PATH="$RESULTS_PATH" --DATA_PATH="$DATA_PATH" --CHECKPOINT_PATH="$CHECKPOINT_PATH" $cmdargs
 
 	mkdir -p results
 	cp -r ${LOCAL_JOB_DIR}/. ${SLURM_SUBMIT_DIR}/results	
@@ -65,7 +67,7 @@ else # Local
 	DATA_PATH="/home/sattler/Data/PyTorch/"
 	CHECKPOINT_PATH="checkpoints/"
 
-	python -u code/federated_learning.py --hp="$hyperparameters" --RESULTS_PATH="$RESULTS_PATH" --DATA_PATH="$DATA_PATH" --CHECKPOINT_PATH="$CHECKPOINT_PATH" 
+	python -u code/federated_learning.py --hp="$hyperparameters" --RESULTS_PATH="$RESULTS_PATH" --DATA_PATH="$DATA_PATH" --CHECKPOINT_PATH="$CHECKPOINT_PATH" $cmdargs
 
 
 

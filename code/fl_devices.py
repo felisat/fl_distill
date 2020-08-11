@@ -166,7 +166,7 @@ def distill_op(model, clients, loader, optimizer, epochs, compress=False, noise=
 
 
 def eval_op(model, loader):
-    model.train()
+    model.eval()
     samples, correct = 0, 0
 
     with torch.no_grad():
