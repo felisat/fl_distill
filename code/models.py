@@ -4,6 +4,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torchvision.models import resnet18
 import numpy as np
+import torchvision
 
 from functools import partial
 
@@ -190,9 +191,24 @@ class lenet_mnist(torch.nn.Module):
 
 
 
+def apply_gn(model):
+    for n, c in model.named_children():
+
+        
+        if isinstance(c, nn.Sequential) or \
+                isinstance(c, torch.nn.modules.container.Sequential) or \
+                isinstance(c, torchvision.models.resnet.BasicBlock):
+            #print("-->", n)
+            apply_gn(c)
+            
+        if isinstance(c, nn.BatchNorm2d):
+            #print(n, c.num_features)
+            setattr(model, n, torch.nn.GroupNorm(num_groups=2, num_channels=c.num_features))  
+
+
 
 class Model(nn.Module):
-    def __init__(self, feature_dim=128):
+    def __init__(self, feature_dim=128, group_norm=False):
         super(Model, self).__init__()
 
         self.f = []
@@ -207,6 +223,9 @@ class Model(nn.Module):
         self.g = nn.Sequential(nn.Linear(512, 512, bias=False), nn.BatchNorm1d(512),
                                nn.ReLU(inplace=True), nn.Linear(512, feature_dim, bias=True))
 
+        if group_norm:
+            apply_gn(self)
+
     def forward(self, x):
         x = self.f(x)
         feature = torch.flatten(x, start_dim=1)
@@ -215,11 +234,11 @@ class Model(nn.Module):
 
 
 class simclr_net(nn.Module):
-    def __init__(self, num_class=10, pretrained_path=None):
+    def __init__(self, num_class=10, pretrained_path=None, group_norm=True):
         super(simclr_net, self).__init__()
 
         # encoder
-        self.f = Model().f
+        self.f = Model(group_norm=group_norm).f
         # classifier
         self.fc = nn.Linear(512, num_class, bias=True)
         if pretrained_path:

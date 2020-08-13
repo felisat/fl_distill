@@ -56,14 +56,15 @@ class Client(Device):
 
 
   def predict_(self, x):
-    y_ = nn.Softmax(1)(self.model(x))
-    
-    amax = torch.argmax(y_, dim=1).detach()#(torch.cumsum(y_, dim=1)<torch.rand(size=(y_.shape[0],1))).sum(dim=1)
+    with torch.no_grad():
+      y_ = nn.Softmax(1)(self.model(x))
+      
+      amax = torch.argmax(y_, dim=1).detach()#(torch.cumsum(y_, dim=1)<torch.rand(size=(y_.shape[0],1))).sum(dim=1)
 
-    t = torch.zeros_like(y_)
-    t[torch.arange(y_.shape[0]),amax] = 1
+      t = torch.zeros_like(y_)
+      t[torch.arange(y_.shape[0]),amax] = 1
 
-    return t
+    return t.detach()
 
 
 
@@ -82,9 +83,9 @@ class Server(Device):
     reduce_average(target=self.W, sources=[client.W for client in clients])
 
 
-  def distill(self, clients, epochs=1, loader=None, compress=False, noise=False):
+  def distill(self, clients, epochs=1, loader=None, eval_loader=None, compress=False, noise=False):
     print("Distilling...")
-    return distill_op(self.model, clients, self.distill_loader if not loader else loader, self.optimizer, epochs, compress=compress, noise=noise)
+    return distill_op(self.model, clients, self.distill_loader if not loader else loader, self.loader if not eval_loader else eval_loader, self.optimizer, epochs, compress=compress, noise=noise)
 
     
 
@@ -122,18 +123,27 @@ def compress_soft_labels(y_):
       return t
 
 
-def distill_op(model, clients, loader, optimizer, epochs, compress=False, noise=False):
+def distill_op(model, clients, loader, eval_loader, optimizer, epochs, compress=False, noise=False):
     model.train()  
 
-    vat_loss = VATLoss(xi=10.0, eps=1.0, ip=1)
+    #vat_loss = VATLoss(xi=10.0, eps=1.0, ip=1)
 
+    acc = 0
+    import time
     for ep in range(epochs):
       running_loss, samples = 0.0, 0
       for x, _ in tqdm(loader):   
         x = x.to(device)
 
         if not noise:
-          y = torch.mean(torch.stack([client.predict(x) for client in clients]), dim=0)
+
+
+          y = torch.zeros([x.shape[0], 10], device="cuda")
+          for i, client in enumerate(clients):
+            y_p = client.predict(x)
+            y += (y_p/len(clients)).detach()
+
+          #y = torch.mean(torch.stack([client.predict(x) for client in clients]), dim=0)
         else:
           hist = torch.sum(torch.stack([client.predict_(x) for client in clients]), dim=0)
           hist += torch.randn_like(hist)
@@ -160,9 +170,18 @@ def distill_op(model, clients, loader, optimizer, epochs, compress=False, noise=
         loss.backward()
         optimizer.step()  
 
-      print(running_loss/samples)
+      #print(running_loss/samples)
 
-    return {"loss" : running_loss / samples}
+
+      acc_new = eval_op(model, eval_loader)["accuracy"]
+      print(acc_new)
+
+      if acc_new < acc:
+        return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
+      else:
+        acc = acc_new
+
+    return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
 
 
 def eval_op(model, loader):
@@ -174,7 +193,7 @@ def eval_op(model, loader):
         x, y = x.to(device), y.to(device)
 
         y_ = model(x)
-        _, predicted = torch.max(y_.data, 1)
+        _, predicted = torch.max(y_.detach(), 1)
         
         samples += y.shape[0]
         correct += (predicted == y).sum().item()
@@ -188,15 +207,15 @@ def flatten(source):
 
 def copy(target, source):
   for name in target:
-    target[name].data = source[name].data.clone()
+    target[name].data = source[name].detach().clone()
     
 def reduce_average(target, sources):
   for name in target:
-      target[name].data = torch.mean(torch.stack([source[name].data for source in sources]), dim=0).clone()
+      target[name].data = torch.mean(torch.stack([source[name].detach() for source in sources]), dim=0).clone()
 
 def subtract_(target, minuend, subtrahend):
   for name in target:
-    target[name].data = minuend[name].data.clone()-subtrahend[name].data.clone()
+    target[name].data = minuend[name].detach().clone()-subtrahend[name].detach().clone()
 
 
 
