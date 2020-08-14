@@ -12,8 +12,8 @@ def get_mnist(path):
 
 def get_cifar10(path):
   transforms = torchvision.transforms.Compose([
-                                          torchvision.transforms.RandomCrop(32, padding=4),
-                                          torchvision.transforms.RandomHorizontalFlip(),
+                                          #torchvision.transforms.RandomCrop(32, padding=4),
+                                          #torchvision.transforms.RandomHorizontalFlip(),
                                           torchvision.transforms.ToTensor(),
                                           torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), 
                                                                (0.2023, 0.1994, 0.2010))
@@ -26,7 +26,10 @@ def get_cifar10(path):
 
 def get_stl10(path):
   transforms = torchvision.transforms.Compose([torchvision.transforms.Resize((32,32)),
-                                                                         torchvision.transforms.ToTensor()])
+                                               torchvision.transforms.ToTensor(),
+                                               torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), 
+                                                               (0.2023, 0.1994, 0.2010))
+                                               ])
 
   data = torchvision.datasets.STL10(root=path+"STL10", split='unlabeled', folds=None, 
                              transform=transforms,
@@ -35,7 +38,10 @@ def get_stl10(path):
 
 def get_svhn(path):
   transforms = torchvision.transforms.Compose([torchvision.transforms.Resize((32,32)),
-                                                                         torchvision.transforms.ToTensor()])
+                                               torchvision.transforms.ToTensor(),
+                                               torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), 
+                                                               (0.2023, 0.1994, 0.2010))
+                                               ])
 
   data = torchvision.datasets.SVHN(root=path+"SVHN", split='train', transform=transforms,
                                     download=True)

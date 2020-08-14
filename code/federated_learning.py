@@ -41,7 +41,7 @@ def run_experiment(xp, xp_count, n_experiments):
   distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=False)
 
   clients = [Client(model_fn, optimizer_fn, loader) for loader in client_loaders]
-  server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=0.001), test_loader, distill_loader)
+  server = Server(model_fn, lambda x : torch.optim.SGD(x, lr=0.1, momentum=0.9), test_loader, distill_loader)
   server.load_model(path=args.CHECKPOINT_PATH, name=hp["pretrained"])
 
   if hp["pretrained_representations"]:
@@ -66,7 +66,6 @@ def run_experiment(xp, xp_count, n_experiments):
     for client in tqdm(participating_clients):
       client.synchronize_with_server(server)
       train_stats = client.compute_weight_update(hp["local_epochs"])  
-      
 
     if hp["mode"] in ["FA", "FAD"]:
       server.aggregate_weight_updates(participating_clients)
@@ -74,6 +73,10 @@ def run_experiment(xp, xp_count, n_experiments):
     if hp["mode"] in ["FD", "FAD"]:
       distill_stats = server.distill(participating_clients, hp["distill_epochs"], compress=hp["compress"], noise=hp["noise"])
       xp.log({"distill_{}".format(key) : value for key, value in distill_stats.items()})
+
+    #if c_round in hp["lr_steps"]:
+    for device in clients+[server]:
+      device.scheduler.step()
 
 
     # Logging
@@ -85,8 +88,8 @@ def run_experiment(xp, xp_count, n_experiments):
       
       # Evaluate  
       xp.log({"client_train_{}".format(key) : value for key, value in train_stats.items()})
-      xp.log({"client_val_{}".format(key) : value for key, value in client.evaluate(server.loader).items()})
-      #xp.log({"server_val_{}".format(key) : value for key, value in server.evaluate().items()})
+      #xp.log({"client_val_{}".format(key) : value for key, value in client.evaluate(server.loader).items()})
+      xp.log({"server_val_{}".format(key) : value for key, value in server.evaluate().items()})
 
       # Save results to Disk
       try:

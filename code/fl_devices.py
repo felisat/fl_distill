@@ -22,7 +22,8 @@ class Device(object):
     self.W_old = {key : torch.zeros_like(value) for key, value in self.model.named_parameters()}
 
     self.optimizer_fn = optimizer_fn
-    self.optimizer = optimizer_fn(self.model.parameters())     
+    self.optimizer = optimizer_fn(self.model.parameters())   
+    self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=1, gamma=0.96)  
     
   def evaluate(self, loader=None):
     return eval_op(self.model, self.loader if not loader else loader)
@@ -41,8 +42,6 @@ class Device(object):
 class Client(Device):
   def __init__(self, model_fn, optimizer_fn, loader, init=None):
     super().__init__(model_fn, optimizer_fn, loader, init)
-
-    self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[100,200], gamma=0.1)
     
   def synchronize_with_server(self, server):
     copy(target=self.W, source=server.W)
@@ -89,7 +88,17 @@ class Server(Device):
     print("Distilling...")
     return distill_op(self.model, clients, self.distill_loader if not loader else loader, self.loader if not eval_loader else eval_loader, self.optimizer, epochs, compress=compress, noise=noise)
 
+  #def recalibrate_batchnorm(self, loader=None):
+  #  compute_batchnorm_running_statistics(self.model, self.distill_loader if not loader else loader)
+
     
+
+#def compute_batchnorm_running_statistics(model, loader):
+#    model.train()
+#    for ep in tqdm(range(20)):
+#      for x, y in loader:
+#        x, y = x.to(device), y.to(device)
+#        model(x)  
 
 
 def train_op(model, loader, optimizer, scheduler, epochs):
@@ -107,7 +116,7 @@ def train_op(model, loader, optimizer, scheduler, epochs):
 
         loss.backward()
         optimizer.step()  
-      scheduler.step()
+      #scheduler.step()
 
     return {"loss" : running_loss / samples}
 
