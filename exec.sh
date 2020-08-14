@@ -15,14 +15,14 @@ hyperparameters=' [{
 	"net" : ["simclr_net"],
 	
 
-	"n_clients" : [20],
+	"n_clients" : [1],
 	"classes_per_client" : [0],
 	"balancedness" : [1.0],
 
 
-	"communication_rounds" : [10],
-	"participation_rate" : [0.4],
-	"local_epochs" : [20],
+	"communication_rounds" : [250],
+	"participation_rate" : [1.0],
+	"local_epochs" : [1],
 	"distill_epochs" : [20],
 	"n_distill" : [null], 
 
@@ -35,11 +35,11 @@ hyperparameters=' [{
 	
 
 	"pretrained" : [null],
-	"pretrained_representations" : [{"svhn" : "25EpochsSVHNgn.pth", "stl10" : "60EpochsSTL10gn.pth"}, null],
+	"pretrained_representations" : [null, {"svhn" : "25EpochsSVHNgn.pth", "stl10" : "60EpochsSTL10gn.pth"}, null],
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["pretrained_big/"],
+	"log_path" : ["baseline_gn/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 

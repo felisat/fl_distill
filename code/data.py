@@ -11,9 +11,12 @@ def get_mnist(path):
   return train_data, test_data
 
 def get_cifar10(path):
-  transforms = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
-                                          #torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), 
-                                          #                     (0.2023, 0.1994, 0.2010))])
+  transforms = torchvision.transforms.Compose([
+                                          torchvision.transforms.RandomCrop(32, padding=4),
+                                          torchvision.transforms.RandomHorizontalFlip(),
+                                          torchvision.transforms.ToTensor(),
+                                          torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), 
+                                                               (0.2023, 0.1994, 0.2010))
                                           ])
   train_data = torchvision.datasets.CIFAR10(root=path+"CIFAR", train=True, download=True, transform=transforms)
   test_data = torchvision.datasets.CIFAR10(root=path+"CIFAR", train=False, download=True, transform=transforms)

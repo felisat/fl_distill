@@ -41,12 +41,14 @@ class Device(object):
 class Client(Device):
   def __init__(self, model_fn, optimizer_fn, loader, init=None):
     super().__init__(model_fn, optimizer_fn, loader, init)
+
+    self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[100,200], gamma=0.1)
     
   def synchronize_with_server(self, server):
     copy(target=self.W, source=server.W)
     
   def compute_weight_update(self, epochs=1, loader=None):
-    train_stats = train_op(self.model, self.loader if not loader else loader, self.optimizer, epochs)
+    train_stats = train_op(self.model, self.loader if not loader else loader, self.optimizer, self.scheduler, epochs)
     return train_stats
 
   def predict(self, x):
@@ -90,7 +92,7 @@ class Server(Device):
     
 
 
-def train_op(model, loader, optimizer, epochs):
+def train_op(model, loader, optimizer, scheduler, epochs):
     model.train()  
     running_loss, samples = 0.0, 0
     for ep in range(epochs):
@@ -105,6 +107,7 @@ def train_op(model, loader, optimizer, epochs):
 
         loss.backward()
         optimizer.step()  
+      scheduler.step()
 
     return {"loss" : running_loss / samples}
 

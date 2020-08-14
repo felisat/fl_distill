@@ -85,7 +85,8 @@ def run_experiment(xp, xp_count, n_experiments):
       
       # Evaluate  
       xp.log({"client_train_{}".format(key) : value for key, value in train_stats.items()})
-      xp.log({"server_val_{}".format(key) : value for key, value in server.evaluate().items()})
+      xp.log({"client_val_{}".format(key) : value for key, value in client.evaluate(server.loader).items()})
+      #xp.log({"server_val_{}".format(key) : value for key, value in server.evaluate().items()})
 
       # Save results to Disk
       try:
