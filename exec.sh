@@ -12,7 +12,7 @@ cmdargs=$1
 hyperparameters=' [{
 	"dataset" : ["cifar10"], 
 	"distill_dataset" : ["stl10", "svhn"],
-	"net" : ["simclr_net_gn"],
+	"net" : ["simclr_net_bn"],
 	
 
 	"n_clients" : [20],
@@ -35,11 +35,11 @@ hyperparameters=' [{
 	
 
 	"pretrained" : [null],
-	"pretrained_representations" : [null, {"svhn" : "25EpochsSVHNgn.pth", "stl10" : "60EpochsSTL10gn.pth"}],
+	"pretrained_representations" : [null, {"svhn" : "100EpochsSVHN.pth", "stl10" : "80epochsSTL10.pth"}],
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["experiment1/"],
+	"log_path" : ["experiment2/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 

@@ -55,10 +55,13 @@ def run_experiment(xp, xp_count, n_experiments):
 
   # print model
   models.print_model(server.model)
+  print(server.model)
 
   # Start Distributed Training Process
   print("Start Distributed Training..\n")
   t1 = time.time()
+
+  xp.log({"server_val_{}".format(key) : value for key, value in server.evaluate().items()})
   for c_round in range(1, hp["communication_rounds"]+1):
 
     participating_clients = server.select_clients(clients, hp["participation_rate"])
