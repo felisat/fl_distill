@@ -271,6 +271,54 @@ class simclr_net_gn(nn.Module):
 
 
 
+
+class simclrVGG11(nn.Module):
+    def __init__(self, n_classes=10, group_norm=False):
+        super(simclrVGG11, self).__init__()
+
+
+        self.f = self.make_layers([64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'])
+        # projection head
+        self.fc = nn.Linear(512, n_classes, bias=True)#nn.Sequential(nn.Linear(512, 128, bias=False), nn.ReLU(inplace=True), nn.Linear(128, n_classes, bias=True))
+
+         # Initialize weights
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, np.sqrt(2. / n))
+                m.bias.data.zero_()
+
+        if group_norm:
+            apply_gn(self)
+
+
+    def make_layers(self, cfg, batch_norm=False):
+        layers = []
+        in_channels = 3
+        for v in cfg:
+            if v == 'M':
+                layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+            else:
+                conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
+                if batch_norm:
+                    layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
+                else:
+                    layers += [conv2d, nn.ReLU(inplace=True)]
+                in_channels = v
+        return nn.Sequential(*layers)
+
+
+    def forward(self, x):
+        x = self.f(x)
+        feature = torch.flatten(x, start_dim=1)
+        out = self.fc(feature)
+        return out
+
+
+
+
+
+
 def get_model(model):
 
   return  { "vgg16" : (vgg16, optim.SGD, {"lr":0.04, "momentum":0.9, "weight_decay":5e-5}),
@@ -282,7 +330,8 @@ def get_model(model):
               "mobilenetv2xs" : (mobilenetv2xs, optim.SGD, {"lr" : 0.01, "momentum" :0.9, "weight_decay" :5e-4}),
               "mobilenetv2_gn" : (mobilenetv2_gn, optim.SGD, {"lr" : 0.01, "momentum" :0.9, "weight_decay" :5e-4}),
               "simclr_net_gn" : (simclr_net_gn, optim.SGD, {"lr" : 0.1, "momentum" : 0.9, "weight_decay" :5e-4}),
-                "simclr_net_bn" : (simclr_net_bn, optim.SGD, {"lr" : 0.1, "momentum" : 0.9, "weight_decay" :5e-4})
+                "simclr_net_bn" : (simclr_net_bn, optim.SGD, {"lr" : 0.1, "momentum" : 0.9, "weight_decay" :5e-4}),
+                    "simclr_vgg11" : (simclrVGG11, optim.Adam, {"lr" : 0.001, "weight_decay" :5e-4})
           }[model]
 
 

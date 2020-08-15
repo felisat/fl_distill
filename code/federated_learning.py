@@ -41,7 +41,7 @@ def run_experiment(xp, xp_count, n_experiments):
   distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=False)
 
   clients = [Client(model_fn, optimizer_fn, loader) for loader in client_loaders]
-  server = Server(model_fn, lambda x : torch.optim.SGD(x, lr=0.1, momentum=0.9), test_loader, distill_loader)
+  server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=0.001, weight_decay=5e-4), test_loader, distill_loader)
   server.load_model(path=args.CHECKPOINT_PATH, name=hp["pretrained"])
 
   if hp["pretrained_representations"]:
@@ -55,7 +55,6 @@ def run_experiment(xp, xp_count, n_experiments):
 
   # print model
   models.print_model(server.model)
-  print(server.model)
 
   # Start Distributed Training Process
   print("Start Distributed Training..\n")
@@ -78,8 +77,8 @@ def run_experiment(xp, xp_count, n_experiments):
       xp.log({"distill_{}".format(key) : value for key, value in distill_stats.items()})
 
     #if c_round in hp["lr_steps"]:
-    for device in clients+[server]:
-      device.scheduler.step()
+    #for device in clients+[server]:
+    #  device.scheduler.step()
 
 
     # Logging
