@@ -44,19 +44,25 @@ class Client(Device):
     super().__init__(model_fn, optimizer_fn, loader, init)
     
   def synchronize_with_server(self, server):
-    copy(target=self.W, source=server.W)
+    self.model.load_state_dict(server.model.state_dict())
+    #copy(target=self.W, source=server.W)
     
   def compute_weight_update(self, epochs=1, loader=None):
     train_stats = train_op(self.model, self.loader if not loader else loader, self.optimizer, self.scheduler, epochs)
     return train_stats
 
   def predict(self, x):
-    y_ = nn.Softmax(1)(self.model(x))
+    """Softmax prediction on input"""
+    self.model.eval()
+    with torch.no_grad():
+      y_ = nn.Softmax(1)(self.model(x))
 
     return y_
 
 
   def predict_(self, x):
+    """Argmax prediction on input"""
+    self.model.eval()
     with torch.no_grad():
       y_ = nn.Softmax(1)(self.model(x))
       
@@ -67,6 +73,48 @@ class Client(Device):
 
     return t.detach()
 
+
+
+
+
+  def generate_feature_bank(self):
+    feature_bank, feature_labels = [], []
+    with torch.no_grad():
+        # generate feature bank
+        for data, target in self.loader:
+            feature = self.model.f(data.to(device)).squeeze() 
+            feature = feature / torch.norm(feature, dim=1).view(-1,1)
+            feature_bank.append(feature)
+            feature_labels.append(target)
+        # [D, N]
+        self.feature_bank = torch.cat(feature_bank, dim=0).t().contiguous()
+        # [N]
+        self.feature_labels = torch.cat(feature_labels)
+        # loop test data to predict the label by weighted knn search
+
+  def predict_knn(self, x, k=10, n_classes=10):
+
+    with torch.no_grad():
+      x = x.to(device)
+      feature = self.model.f(x).squeeze()
+      feature = feature / torch.norm(feature, dim=1).view(-1,1)
+
+      # compute cos similarity between each feature vector and feature bank ---> [B, N]
+      sim_matrix = torch.mm(feature, self.feature_bank)
+      # [B, K]
+      sim_weight, sim_indices = sim_matrix.topk(k=k, dim=-1)
+      # [B, K]
+      sim_labels = torch.gather(self.feature_labels.expand(x.size(0), -1).to(device), dim=-1, index=sim_indices.to(device))
+      #sim_weight = (sim_weight / temperature).exp()
+
+      # counts for each class
+      one_hot_label = torch.zeros(x.size(0) * k, n_classes, device=sim_labels.device)
+      # [B*K, C]
+      one_hot_label = one_hot_label.scatter(dim=-1, index=sim_labels.long().view(-1, 1), value=1.0)
+      # weighted score ---> [B, C]
+      pred_scores = torch.sum(one_hot_label.view(x.size(0), -1, n_classes) * sim_weight.unsqueeze(dim=-1), dim=1)
+
+    return pred_scores.detach()
 
 
 
@@ -84,14 +132,29 @@ class Server(Device):
     reduce_average(target=self.W, sources=[client.W for client in clients])
 
 
-  def distill(self, clients, epochs=1, loader=None, eval_loader=None, compress=False, noise=False):
+  def distill(self, clients, epochs=1, loader=None, eval_loader=None, mode="regular", kw_args={}):
     print("Distilling...")
-    return distill_op(self.model, clients, self.distill_loader if not loader else loader, self.loader if not eval_loader else eval_loader, self.optimizer, epochs, compress=compress, noise=noise)
+    return distill_op(self.model, clients, self.distill_loader if not loader else loader, self.loader if not eval_loader else eval_loader, self.optimizer, epochs, mode=mode, kw_args=kw_args)
 
   #def recalibrate_batchnorm(self, loader=None):
   #  compute_batchnorm_running_statistics(self.model, self.distill_loader if not loader else loader)
 
     
+  def compute_prediction_histogram(self, clients, loader=None):
+    loader = self.distill_loader if not loader else loader
+
+    hist = torch.zeros([100000,10], device="cuda")
+    for client in tqdm(clients):
+      n = 0
+      for x, _ in loader:
+        x = x.to(device)
+        y_predict = client.predict(x)
+        m = x.shape[0]
+        hist[n:n+m] += y_predict
+
+        n += m
+
+    return hist
 
 #def compute_batchnorm_running_statistics(model, loader):
 #    model.train()
@@ -135,10 +198,12 @@ def compress_soft_labels(y_):
       return t
 
 
-def distill_op(model, clients, loader, eval_loader, optimizer, epochs, compress=False, noise=False):
+def distill_op(model, clients, loader, eval_loader, optimizer, epochs, mode="regular", kw_args={}):
     model.train()  
 
     #vat_loss = VATLoss(xi=10.0, eps=1.0, ip=1)
+
+    assert mode in ["regular", "pate", "knn"], "mode has to be one of [regular, pate, knn]"
 
     acc = 0
     import time
@@ -147,16 +212,14 @@ def distill_op(model, clients, loader, eval_loader, optimizer, epochs, compress=
       for x, _ in tqdm(loader):   
         x = x.to(device)
 
-        if not noise:
-
-
+        if mode == "regular":
           y = torch.zeros([x.shape[0], 10], device="cuda")
           for i, client in enumerate(clients):
             y_p = client.predict(x)
             y += (y_p/len(clients)).detach()
 
-          #y = torch.mean(torch.stack([client.predict(x) for client in clients]), dim=0)
-        else:
+
+        if mode == "pate":
           hist = torch.sum(torch.stack([client.predict_(x) for client in clients]), dim=0)
           hist += torch.randn_like(hist)
 
@@ -165,7 +228,16 @@ def distill_op(model, clients, loader, eval_loader, optimizer, epochs, compress=
           y = torch.zeros_like(hist)
           y[torch.arange(hist.shape[0]),amax] = 1
 
+        if mode in "knn":
+          scores = torch.zeros([x.shape[0], 10], device="cuda")
+          for i, client in enumerate(clients):
+            y_p = client.predict_knn(x, k=kw_args["knn_k"])
+            scores += (y_p/len(clients)).detach()          
 
+          amax = torch.argmax(scores, dim=1)
+
+          y = torch.zeros_like(scores)
+          y[torch.arange(x.shape[0]),amax] = 1
 
         optimizer.zero_grad()
 

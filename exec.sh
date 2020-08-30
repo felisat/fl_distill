@@ -12,7 +12,7 @@ cmdargs=$1
 hyperparameters=' [{
 	"dataset" : ["cifar10"], 
 	"distill_dataset" : ["stl10", "svhn"],
-	"net" : ["simclr_vgg11"],
+	"net" : ["simclr_net_bn"],
 	
 
 	"n_clients" : [20],
@@ -20,17 +20,18 @@ hyperparameters=' [{
 	"balancedness" : [1.0],
 
 
-	"communication_rounds" : [100],
-	"participation_rate" : [0.4],
+	"communication_rounds" : [50],
+	"participation_rate" : [1.0],
 	"local_epochs" : [20],
 	"distill_epochs" : [10],
-	"n_distill" : [null], 
+	"n_distill" : [100, 1000, 10000], 
+
+	"knn_k" : [10],
 
 	
 	"batch_size" : [128],
-	"mode" : ["FA", "FD", "FAD"],
-	"compress" : [false],
-	"noise" : [false],
+	"mode" : ["FD"],
+	"distill_mode" : ["regular"],
 	"only_linear" : [false],
 	
 
@@ -39,7 +40,7 @@ hyperparameters=' [{
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["vgg11_results/"],
+	"log_path" : ["n_distill2/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
