@@ -29,7 +29,7 @@ hyperparameters=' [{
 	
 	"batch_size" : [128],
 	"mode" : ["FD"],
-	"distill_mode" : ["pate", "regular"],
+	"distill_mode" : ["pate_up"],
 	"only_linear" : [false],
 	
 

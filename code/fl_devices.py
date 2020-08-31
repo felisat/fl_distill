@@ -150,7 +150,7 @@ class Server(Device):
 
     #vat_loss = VATLoss(xi=10.0, eps=1.0, ip=1)
 
-    assert mode in ["regular", "pate", "knn"], "mode has to be one of [regular, pate, knn]"
+    assert mode in ["regular", "pate", "knn", "pate_up"], "mode has to be one of [regular, pate, knn]"
 
     acc = 0
     import time
@@ -174,6 +174,11 @@ class Server(Device):
 
           y = torch.zeros_like(hist)
           y[torch.arange(hist.shape[0]),amax] = 1
+
+
+        if mode == "pate_up":
+          y = torch.mean(torch.stack([client.predict_(x) for client in clients]), dim=0)
+
 
         if mode in "knn":
           scores = torch.zeros([x.shape[0], 10], device="cuda")
