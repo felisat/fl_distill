@@ -116,6 +116,18 @@ class Client(Device):
 
     return pred_scores.detach()
 
+  def compute_predictions(self, distill_loader):
+
+    predictions = []
+    for x, _ in distill_loader:
+      x = x.to(device)
+      y_predict = self.predict(x).detach()
+      
+      predictions += [y_predict]
+
+    return torch.cat(predictions, dim=0).detach().cpu().numpy()
+
+
 
 
     
@@ -132,29 +144,80 @@ class Server(Device):
     reduce_average(target=self.W, sources=[client.W for client in clients])
 
 
-  def distill(self, clients, epochs=1, loader=None, eval_loader=None, mode="regular", kw_args={}):
+  def distill(self, clients, epochs=1, mode="regular"):
     print("Distilling...")
-    return distill_op(self.model, clients, self.distill_loader if not loader else loader, self.loader if not eval_loader else eval_loader, self.optimizer, epochs, mode=mode, kw_args=kw_args)
+    self.model.train()  
+
+    #vat_loss = VATLoss(xi=10.0, eps=1.0, ip=1)
+
+    assert mode in ["regular", "pate", "knn"], "mode has to be one of [regular, pate, knn]"
+
+    acc = 0
+    import time
+    for ep in range(epochs):
+      running_loss, samples = 0.0, 0
+      for x, _ in tqdm(self.distill_loader):   
+        x = x.to(device)
+
+        if mode == "regular":
+          y = torch.zeros([x.shape[0], 10], device="cuda")
+          for i, client in enumerate(clients):
+            y_p = client.predict(x)
+            y += (y_p/len(clients)).detach()
+
+
+        if mode == "pate":
+          hist = torch.sum(torch.stack([client.predict_(x) for client in clients]), dim=0)
+          #hist += torch.randn_like(hist)
+
+          amax = torch.argmax(hist, dim=1)
+
+          y = torch.zeros_like(hist)
+          y[torch.arange(hist.shape[0]),amax] = 1
+
+        if mode in "knn":
+          scores = torch.zeros([x.shape[0], 10], device="cuda")
+          for i, client in enumerate(clients):
+            y_p = client.predict_knn(x, k=10)
+            scores += (y_p/len(clients)).detach()          
+
+          amax = torch.argmax(scores, dim=1)
+
+          y = torch.zeros_like(scores)
+          y[torch.arange(x.shape[0]),amax] = 1
+
+        self.optimizer.zero_grad()
+
+        #vat = vat_loss(model, x)
+
+        y_ = nn.Softmax(1)(self.model(x))
+
+        loss = kulbach_leibler_divergence(y_,y)#torch.mean(torch.sum(y_*(y_.log()-y.log()), dim=1))
+
+ 
+        running_loss += loss.item()*y.shape[0]
+        samples += y.shape[0]
+
+        loss.backward()
+        self.optimizer.step()  
+
+      #print(running_loss/samples)
+
+
+      acc_new = eval_op(self.model, self.loader)["accuracy"]
+      print(acc_new)
+
+      if acc_new < acc:
+        return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
+      else:
+        acc = acc_new
+
+    return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
 
   #def recalibrate_batchnorm(self, loader=None):
   #  compute_batchnorm_running_statistics(self.model, self.distill_loader if not loader else loader)
 
-    
-  def compute_prediction_histogram(self, clients, loader=None):
-    loader = self.distill_loader if not loader else loader
-
-    hist = torch.zeros([100000,10], device="cuda")
-    for client in tqdm(clients):
-      n = 0
-      for x, _ in loader:
-        x = x.to(device)
-        y_predict = client.predict(x)
-        m = x.shape[0]
-        hist[n:n+m] += y_predict
-
-        n += m
-
-    return hist
+  
 
 #def compute_batchnorm_running_statistics(model, loader):
 #    model.train()
@@ -188,84 +251,6 @@ def kulbach_leibler_divergence(predicted, target):
     return -(target * torch.log(predicted.clamp_min(1e-7))).sum(dim=-1).mean() - \
            -1*(target.clamp(min=1e-7) * torch.log(target.clamp(min=1e-7))).sum(dim=-1).mean()
 
-
-def compress_soft_labels(y_):
-      sample = (torch.cumsum(y_, dim=1)<torch.rand(size=(y_.shape[0],1)).to(device)).sum(dim=1)
-
-      t = torch.zeros_like(y_).to(device)
-      t[torch.arange(y_.shape[0]),sample] = 1
-
-      return t
-
-
-def distill_op(model, clients, loader, eval_loader, optimizer, epochs, mode="regular", kw_args={}):
-    model.train()  
-
-    #vat_loss = VATLoss(xi=10.0, eps=1.0, ip=1)
-
-    assert mode in ["regular", "pate", "knn"], "mode has to be one of [regular, pate, knn]"
-
-    acc = 0
-    import time
-    for ep in range(epochs):
-      running_loss, samples = 0.0, 0
-      for x, _ in tqdm(loader):   
-        x = x.to(device)
-
-        if mode == "regular":
-          y = torch.zeros([x.shape[0], 10], device="cuda")
-          for i, client in enumerate(clients):
-            y_p = client.predict(x)
-            y += (y_p/len(clients)).detach()
-
-
-        if mode == "pate":
-          hist = torch.sum(torch.stack([client.predict_(x) for client in clients]), dim=0)
-          hist += torch.randn_like(hist)
-
-          amax = torch.argmax(hist, dim=1)
-
-          y = torch.zeros_like(hist)
-          y[torch.arange(hist.shape[0]),amax] = 1
-
-        if mode in "knn":
-          scores = torch.zeros([x.shape[0], 10], device="cuda")
-          for i, client in enumerate(clients):
-            y_p = client.predict_knn(x, k=kw_args["knn_k"])
-            scores += (y_p/len(clients)).detach()          
-
-          amax = torch.argmax(scores, dim=1)
-
-          y = torch.zeros_like(scores)
-          y[torch.arange(x.shape[0]),amax] = 1
-
-        optimizer.zero_grad()
-
-        #vat = vat_loss(model, x)
-
-        y_ = nn.Softmax(1)(model(x))
-
-        loss = kulbach_leibler_divergence(y_,y)#torch.mean(torch.sum(y_*(y_.log()-y.log()), dim=1))
-
- 
-        running_loss += loss.item()*y.shape[0]
-        samples += y.shape[0]
-
-        loss.backward()
-        optimizer.step()  
-
-      #print(running_loss/samples)
-
-
-      acc_new = eval_op(model, eval_loader)["accuracy"]
-      print(acc_new)
-
-      if acc_new < acc:
-        return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
-      else:
-        acc = acc_new
-
-    return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
 
 
 def eval_op(model, loader):

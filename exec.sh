@@ -24,14 +24,12 @@ hyperparameters=' [{
 	"participation_rate" : [1.0],
 	"local_epochs" : [20],
 	"distill_epochs" : [10],
-	"n_distill" : [100, 1000, 10000], 
-
-	"knn_k" : [10],
+	"n_distill" : [1000, 10000, 100000], 
 
 	
 	"batch_size" : [128],
 	"mode" : ["FD"],
-	"distill_mode" : ["regular"],
+	"distill_mode" : ["pate", "regular"],
 	"only_linear" : [false],
 	
 
@@ -40,7 +38,7 @@ hyperparameters=' [{
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["n_distill2/"],
+	"log_path" : ["dataset_size_compression/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 

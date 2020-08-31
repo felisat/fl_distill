@@ -65,27 +65,26 @@ def run_experiment(xp, xp_count, n_experiments):
   for c_round in range(1, hp["communication_rounds"]+1):
 
     participating_clients = server.select_clients(clients, hp["participation_rate"])
+      
 
-    for i, client in enumerate(participating_clients):
+    for client in tqdm(participating_clients):
       client.synchronize_with_server(server)
-      #client.generate_feature_bank()
+      train_stats = client.compute_weight_update(hp["local_epochs"]) 
 
-
-    if hp["mode"] not in ["FknnD"]:
-      for client in tqdm(participating_clients):
-        client.synchronize_with_server(server)
-        train_stats = client.compute_weight_update(hp["local_epochs"])  
+      #client.generate_feature_bank() 
 
     if hp["mode"] in ["FA", "FAD"]:
       server.aggregate_weight_updates(participating_clients)
     
     if hp["mode"] in ["FD", "FAD", "FknnD"]:
 
+      xp.log({"predictions" : clients[0].compute_predictions(distill_loader)})
+
       #hist = server.compute_prediction_histogram(participating_clients)
       #print(hist)
       #exit()
 
-      distill_stats = server.distill(participating_clients, hp["distill_epochs"], mode=hp["distill_mode"], kw_args=hp)
+      distill_stats = server.distill(participating_clients, hp["distill_epochs"], mode=hp["distill_mode"])
       xp.log({"distill_{}".format(key) : value for key, value in distill_stats.items()})
 
     #if c_round in hp["lr_steps"]:
