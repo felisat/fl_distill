@@ -11,7 +11,7 @@ cmdargs=$1
 
 hyperparameters=' [{
 	"dataset" : ["cifar10"], 
-	"distill_dataset" : ["stl10", "svhn"],
+	"distill_dataset" : ["stl10"],
 	"net" : ["simclr_net_bn"],
 	
 
@@ -22,14 +22,14 @@ hyperparameters=' [{
 
 	"communication_rounds" : [50],
 	"participation_rate" : [1.0],
-	"local_epochs" : [20],
+	"local_epochs" : [1],
 	"distill_epochs" : [10],
-	"n_distill" : [1000, 10000, 100000], 
+	"n_distill" : [1000], 
 
 	
 	"batch_size" : [128],
 	"mode" : ["FD"],
-	"distill_mode" : ["pate_up"],
+	"distill_mode" : ["regular"],
 	"only_linear" : [false],
 	
 
@@ -38,7 +38,7 @@ hyperparameters=' [{
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["dataset_size_compression/"],
+	"log_path" : ["trash/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 

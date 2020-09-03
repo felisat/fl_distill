@@ -78,7 +78,7 @@ def run_experiment(xp, xp_count, n_experiments):
     
     if hp["mode"] in ["FD", "FAD", "FknnD"]:
 
-      xp.log({"predictions" : clients[0].compute_predictions(distill_loader)})
+      #xp.log({"predictions" : clients[0].compute_predictions(distill_loader)})
 
       #hist = server.compute_prediction_histogram(participating_clients)
       #print(hist)
@@ -86,10 +86,6 @@ def run_experiment(xp, xp_count, n_experiments):
 
       distill_stats = server.distill(participating_clients, hp["distill_epochs"], mode=hp["distill_mode"])
       xp.log({"distill_{}".format(key) : value for key, value in distill_stats.items()})
-
-    #if c_round in hp["lr_steps"]:
-    #for device in clients+[server]:
-    #  device.scheduler.step()
 
 
     # Logging

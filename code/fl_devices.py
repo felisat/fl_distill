@@ -74,10 +74,8 @@ class Client(Device):
     return t.detach()
 
 
-
-
-
   def generate_feature_bank(self):
+    """Extracts Features of local data using local neural network"""
     feature_bank, feature_labels = [], []
     with torch.no_grad():
         # generate feature bank
@@ -93,7 +91,7 @@ class Client(Device):
         # loop test data to predict the label by weighted knn search
 
   def predict_knn(self, x, k=10, n_classes=10):
-
+    """Weighted k-neirest-neighbor-prediction in feature space (first a feature bank needs to be generated)"""
     with torch.no_grad():
       x = x.to(device)
       feature = self.model.f(x).squeeze()
@@ -116,7 +114,9 @@ class Client(Device):
 
     return pred_scores.detach()
 
-  def compute_predictions(self, distill_loader):
+
+
+  def compute_prediction_matrix(self, distill_loader):
 
     predictions = []
     for x, _ in distill_loader:
@@ -197,6 +197,10 @@ class Server(Device):
 
         y_ = nn.Softmax(1)(self.model(x))
 
+        def kulbach_leibler_divergence(predicted, target):
+          return -(target * torch.log(predicted.clamp_min(1e-7))).sum(dim=-1).mean() - \
+                 -1*(target.clamp(min=1e-7) * torch.log(target.clamp(min=1e-7))).sum(dim=-1).mean()
+
         loss = kulbach_leibler_divergence(y_,y)#torch.mean(torch.sum(y_*(y_.log()-y.log()), dim=1))
 
  
@@ -219,17 +223,6 @@ class Server(Device):
 
     return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
 
-  #def recalibrate_batchnorm(self, loader=None):
-  #  compute_batchnorm_running_statistics(self.model, self.distill_loader if not loader else loader)
-
-  
-
-#def compute_batchnorm_running_statistics(model, loader):
-#    model.train()
-#    for ep in tqdm(range(20)):
-#      for x, y in loader:
-#        x, y = x.to(device), y.to(device)
-#        model(x)  
 
 
 def train_op(model, loader, optimizer, scheduler, epochs):
@@ -250,11 +243,6 @@ def train_op(model, loader, optimizer, scheduler, epochs):
       #scheduler.step()
 
     return {"loss" : running_loss / samples}
-
-
-def kulbach_leibler_divergence(predicted, target):
-    return -(target * torch.log(predicted.clamp_min(1e-7))).sum(dim=-1).mean() - \
-           -1*(target.clamp(min=1e-7) * torch.log(target.clamp(min=1e-7))).sum(dim=-1).mean()
 
 
 
