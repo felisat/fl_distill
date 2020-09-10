@@ -12,19 +12,19 @@ cmdargs=$1
 hyperparameters=' [{
 	"dataset" : ["cifar10"], 
 	"distill_dataset" : ["stl10"],
-	"net" : ["simclr_net_bn"],
+	"net" : ["lenet_cifar"],
 	
 
 	"n_clients" : [20],
-	"classes_per_client" : [0],
+	"classes_per_client" : [0.1],
 	"balancedness" : [1.0],
 
 
 	"communication_rounds" : [50],
-	"participation_rate" : [1.0],
-	"local_epochs" : [1],
+	"participation_rate" : [0.4],
+	"local_epochs" : [20],
 	"distill_epochs" : [10],
-	"n_distill" : [1000], 
+	"n_distill" : [100000], 
 
 	
 	"batch_size" : [128],
@@ -38,7 +38,7 @@ hyperparameters=' [{
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["trash/"],
+	"log_path" : ["noniid/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 

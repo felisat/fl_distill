@@ -81,7 +81,7 @@ class Client(Device):
         # generate feature bank
         for data, target in self.loader:
             feature = self.model.f(data.to(device)).squeeze() 
-            feature = feature / torch.norm(feature, dim=1).view(-1,1)
+            #feature = feature / torch.norm(feature, dim=1).view(-1,1)
             feature_bank.append(feature)
             feature_labels.append(target)
         # [D, N]
@@ -89,6 +89,21 @@ class Client(Device):
         # [N]
         self.feature_labels = torch.cat(feature_labels)
         # loop test data to predict the label by weighted knn search
+
+  def predict_knn_weight(self, x, k=10):
+    """Weighted k-neirest-neighbor-prediction in feature space (first a feature bank needs to be generated)"""
+    with torch.no_grad():
+      x = x.to(device)
+      feature = self.model.f(x).squeeze()
+      #feature = feature / torch.norm(feature, dim=1).view(-1,1)
+
+      # compute cos similarity between each feature vector and feature bank ---> [B, N]
+      sim_matrix = torch.mm(feature, self.feature_bank)
+      # [B, K]
+      sim_weight, sim_indices = sim_matrix.topk(k=k, dim=-1)
+
+    return torch.mean(sim_weight,axis=-1)
+
 
   def predict_knn(self, x, k=10, n_classes=10):
     """Weighted k-neirest-neighbor-prediction in feature space (first a feature bank needs to be generated)"""
@@ -150,7 +165,7 @@ class Server(Device):
 
     #vat_loss = VATLoss(xi=10.0, eps=1.0, ip=1)
 
-    assert mode in ["regular", "pate", "knn", "pate_up"], "mode has to be one of [regular, pate, knn]"
+    assert mode in ["regular", "weighted", "pate", "knn", "pate_up"], "mode has to be one of [regular, pate, knn]"
 
     acc = 0
     import time
@@ -164,6 +179,17 @@ class Server(Device):
           for i, client in enumerate(clients):
             y_p = client.predict(x)
             y += (y_p/len(clients)).detach()
+
+        if mode == "weighted":
+          y = torch.zeros([x.shape[0], 10], device="cuda")
+          w = torch.zeros([x.shape[0], 1], device="cuda")
+          for i, client in enumerate(clients):
+            y_p = client.predict(x)
+            weight = client.predict_knn_weight(x).view(-1,1)
+
+            y += (y_p*weight).detach()
+            w += weight.detach()
+          y = y / w
 
 
         if mode == "pate":
