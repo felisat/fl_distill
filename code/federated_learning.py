@@ -42,12 +42,12 @@ def run_experiment(xp, xp_count, n_experiments):
 
   clients = [Client(model_fn, optimizer_fn, loader) for loader in client_loaders]
   server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=0.001, weight_decay=5e-4), test_loader, distill_loader)
-  server.load_model(path=args.CHECKPOINT_PATH, name=hp["pretrained"])
+  #server.load_model(path=args.CHECKPOINT_PATH, name=hp["pretrained"])
 
-  if hp["pretrained_representations"]:
+  if hp["pretrained"]:
     for device in clients+[server]:
-      device.model.load_state_dict(torch.load(args.CHECKPOINT_PATH+hp["pretrained_representations"][hp["distill_dataset"]], map_location='cpu'), strict=False)
-    print("Successfully loader model from", hp["pretrained_representations"][hp["distill_dataset"]])
+      device.model.load_state_dict(torch.load(args.CHECKPOINT_PATH+hp["pretrained"][hp["distill_dataset"]], map_location='cpu'), strict=False)
+    print("Successfully loader model from", hp["pretrained"][hp["distill_dataset"]])
 
   if hp["only_linear"]:
     for device in [server]+clients:
@@ -72,10 +72,10 @@ def run_experiment(xp, xp_count, n_experiments):
 
       train_stats = client.compute_weight_update(hp["local_epochs"]) 
 
-    if hp["mode"] in ["FA", "FAD"]:
+    if hp["aggregation_mode"] in ["FA", "FAD"]:
       server.aggregate_weight_updates(participating_clients)
     
-    if hp["mode"] in ["FD", "FAD", "FknnD"]:
+    if hp["aggregation_mode"] in ["FD", "FAD", "FknnD"]:
 
       #xp.log({"predictions" : clients[0].compute_prediction_matrix(distill_loader)})
 

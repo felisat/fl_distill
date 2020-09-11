@@ -2,7 +2,17 @@ import torch, torchvision
 import numpy as np
 
 def get_mnist(path):
-  transforms = torchvision.transforms.Compose([ torchvision.transforms.ToTensor(),    
+
+  class AddChannels(object):
+    def __init__(self, n_channels=3):
+      self.n_channels = n_channels
+    def __call__(self, x):
+      return torch.cat([x]*self.n_channels, dim=0)
+
+
+  transforms = torchvision.transforms.Compose([ torchvision.transforms.Resize((32,32)),
+                                                torchvision.transforms.ToTensor(),    
+                                                AddChannels()
                                                 #torchvision.transforms.Normalize((0.1307,), (0.3081,))])
                                                 ])
   train_data = torchvision.datasets.MNIST(root=path+"MNIST", train=True, download=True, transform=transforms)
@@ -103,6 +113,8 @@ def split_image_data(labels, n_clients, n_data, classes_per_client):
 
 def split_dirichlet(labels, n_clients, n_data, alpha, double_stochstic=True):
     '''Splits data among the clients according to a dirichlet distribution with parameter alpha'''
+    if isinstance(labels, torch.Tensor):
+      labels = labels.numpy()
     n_classes = np.max(labels)+1
     label_distribution = np.random.dirichlet([alpha]*n_clients, n_classes)
 
@@ -153,5 +165,5 @@ def print_split(idcs, labels):
     elif i==len(idcs)-10:
       print(".  "*10+"\n"+".  "*10+"\n"+".  "*10)
 
-  print("- Total:      {}".format(np.stack(splits, axis=0).sum(axis=0)))
+  print(" - Total:      {}".format(np.stack(splits, axis=0).sum(axis=0)))
   print()
