@@ -4,8 +4,11 @@ from tqdm import tqdm
 import torch
 import torch.optim as optim
 import torch.nn as nn
+from torch.utils.data import ConcatDataset, TensorDataset
 
 from virtual_adversarial_training import VATLoss
+
+import numpy as np
 
 
 
@@ -13,9 +16,11 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
 
 class Device(object):
-  def __init__(self, model_fn, optimizer_fn, loader, init=None):
+  def __init__(self, model_fn, optimizer_fn, loader, distill_loader, init=None):
     self.model = model_fn().to(device)
     self.loader = loader
+    self.distill_loader = distill_loader
+
 
     self.W = {key : value for key, value in self.model.named_parameters()}
     self.dW = {key : torch.zeros_like(value) for key, value in self.model.named_parameters()}
@@ -37,12 +42,127 @@ class Device(object):
     if name:
       self.model.load_state_dict(torch.load(path+name))
       if verbose: print("Loaded model from", path+name)
-    
+
+  def distill(self, clients=None, epochs=1, mode="regular", distill_phase="server"):
+    print("Distilling...")
+
+    if distill_phase == "server":
+      self.model.train()
+    elif distill_phase == "clients":
+      epochs = 1 # for the one-step distillation only the softlabels are necessary
+
+    #vat_loss = VATLoss(xi=10.0, eps=1.0, ip=1)
+
+    assert mode in ["regular", "weighted", "pate", "knn", "pate_up"], "mode has to be one of [regular, pate, knn]"
+
+    acc = 0
+    softlabels = []
+    for ep in range(epochs):
+      running_loss, samples = 0.0, 0
+      for x, _ in tqdm(self.distill_loader):   
+        x = x.to(device)
+
+        if mode == "regular":
+          y = torch.zeros([x.shape[0], 10], device=device)
+          for i, client in enumerate(clients):
+            y_p = client.predict(x)
+            y += (y_p/len(clients)).detach()
+
+        if mode == "weighted":
+          y = torch.zeros([x.shape[0], 10], device=device)
+          w = torch.zeros([x.shape[0], 1], device=device)
+          for i, client in enumerate(clients):
+            y_p = client.predict(x)
+            weight = client.predict_knn_weight(x).view(-1,1)
+
+            y += (y_p*weight).detach()
+            w += weight.detach()
+          y = y / w
+
+
+        if mode == "pate":
+          hist = torch.sum(torch.stack([client.predict_(x) for client in clients]), dim=0)
+          #hist += torch.randn_like(hist)
+
+          amax = torch.argmax(hist, dim=1)
+
+          y = torch.zeros_like(hist)
+          y[torch.arange(hist.shape[0]),amax] = 1
+
+
+        if mode == "pate_up":
+          y = torch.mean(torch.stack([client.predict_(x) for client in clients]), dim=0)
+
+
+        if mode in "knn":
+          scores = torch.zeros([x.shape[0], 10], device=device)
+          for i, client in enumerate(clients):
+            y_p = client.predict_knn(x, k=10)
+            scores += (y_p/len(clients)).detach()          
+
+          amax = torch.argmax(scores, dim=1)
+
+          y = torch.zeros_like(scores)
+          y[torch.arange(x.shape[0]),amax] = 1
+
+        if distill_phase == "server":
+          self.optimizer.zero_grad()
+          #vat = vat_loss(model, x)
+          y_ = nn.Softmax(1)(self.model(x))
+
+          def kulbach_leibler_divergence(predicted, target):
+            return -(target * torch.log(predicted.clamp_min(1e-7))).sum(dim=-1).mean() - \
+                   -1*(target.clamp(min=1e-7) * torch.log(target.clamp(min=1e-7))).sum(dim=-1).mean()
+
+          loss = kulbach_leibler_divergence(y_,y)#torch.mean(torch.sum(y_*(y_.log()-y.log()), dim=1))
+
+ 
+          running_loss += loss.item()*y.shape[0]
+          samples += y.shape[0]
+
+          loss.backward()
+          self.optimizer.step()
+        else:
+          softlabels.append(y)
+
+      # update clients with new softlabel data
+      if distill_phase == "clients":
+        for client in clients:
+          client.softlabels = torch.cat(softlabels)
+          client.make_combined_dataloader
+          return {"loss" : 1, "acc" : 1, "epochs" : 1}
+
+      if distill_phase == "server":
+        acc_new = eval_op(self.model, self.loader)["accuracy"]
+        print(acc_new)
+
+        if acc_new < acc:
+          return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
+        else:
+          acc = acc_new
+
+        return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
       
 class Client(Device):
-  def __init__(self, model_fn, optimizer_fn, loader, init=None):
-    super().__init__(model_fn, optimizer_fn, loader, init)
-    
+  def __init__(self, model_fn, optimizer_fn, loader=None, client_dataset=[], aux_dataset=[], distill_loader=None, init=None, **kwargs):
+    super().__init__(model_fn, optimizer_fn, loader, distill_loader, init)
+    self.kwargs = kwargs
+
+    assert (loader or (client_dataset and aux_dataset)), "Either a data loader or a dataset must be provided"
+
+    if client_dataset:
+      self.client_dataset = client_dataset
+      self.aux_dataset = aux_dataset
+      self.softlabels = None
+      self.loader = self.make_combined_dataloader()
+
+
+  def make_combined_dataloader(self):
+    return torch.utils.data.DataLoader(
+      ConcatDataset(
+        [self.client_dataset, TensorDataset(self.aux_dataset, self.softlabels)]  if self.softlabels else [self.client_dataset]
+      ), batch_size=self.kwargs["batch_size"], shuffle=True, pin_memory=True)
+
   def synchronize_with_server(self, server):
     self.model.load_state_dict(server.model.state_dict())
     #copy(target=self.W, source=server.W)
@@ -142,112 +262,17 @@ class Client(Device):
 
     return torch.cat(predictions, dim=0).detach().cpu().numpy()
 
-
-
-
-    
+   
  
 class Server(Device):
-  def __init__(self, model_fn, optimizer_fn, loader, unlabeled_loader, init=None):
-    super().__init__(model_fn, optimizer_fn, loader, init)
-    self.distill_loader = unlabeled_loader
+  def __init__(self, model_fn, optimizer_fn, loader, distill_loader, init=None):
+    super().__init__(model_fn, optimizer_fn, loader, distill_loader, init)
     
   def select_clients(self, clients, frac=1.0):
     return random.sample(clients, int(len(clients)*frac)) 
     
   def aggregate_weight_updates(self, clients):
     reduce_average(target=self.W, sources=[client.W for client in clients])
-
-
-  def distill(self, clients, epochs=1, mode="regular"):
-    print("Distilling...")
-    self.model.train()  
-
-    #vat_loss = VATLoss(xi=10.0, eps=1.0, ip=1)
-
-    assert mode in ["regular", "weighted", "pate", "knn", "pate_up"], "mode has to be one of [regular, pate, knn]"
-
-    acc = 0
-    import time
-    for ep in range(epochs):
-      running_loss, samples = 0.0, 0
-      for x, _ in tqdm(self.distill_loader):   
-        x = x.to(device)
-
-        if mode == "regular":
-          y = torch.zeros([x.shape[0], 10], device="cuda")
-          for i, client in enumerate(clients):
-            y_p = client.predict(x)
-            y += (y_p/len(clients)).detach()
-
-        if mode == "weighted":
-          y = torch.zeros([x.shape[0], 10], device="cuda")
-          w = torch.zeros([x.shape[0], 1], device="cuda")
-          for i, client in enumerate(clients):
-            y_p = client.predict(x)
-            weight = client.predict_knn_weight(x).view(-1,1)
-
-            y += (y_p*weight).detach()
-            w += weight.detach()
-          y = y / w
-
-
-        if mode == "pate":
-          hist = torch.sum(torch.stack([client.predict_(x) for client in clients]), dim=0)
-          #hist += torch.randn_like(hist)
-
-          amax = torch.argmax(hist, dim=1)
-
-          y = torch.zeros_like(hist)
-          y[torch.arange(hist.shape[0]),amax] = 1
-
-
-        if mode == "pate_up":
-          y = torch.mean(torch.stack([client.predict_(x) for client in clients]), dim=0)
-
-
-        if mode in "knn":
-          scores = torch.zeros([x.shape[0], 10], device="cuda")
-          for i, client in enumerate(clients):
-            y_p = client.predict_knn(x, k=10)
-            scores += (y_p/len(clients)).detach()          
-
-          amax = torch.argmax(scores, dim=1)
-
-          y = torch.zeros_like(scores)
-          y[torch.arange(x.shape[0]),amax] = 1
-
-        self.optimizer.zero_grad()
-
-        #vat = vat_loss(model, x)
-
-        y_ = nn.Softmax(1)(self.model(x))
-
-        def kulbach_leibler_divergence(predicted, target):
-          return -(target * torch.log(predicted.clamp_min(1e-7))).sum(dim=-1).mean() - \
-                 -1*(target.clamp(min=1e-7) * torch.log(target.clamp(min=1e-7))).sum(dim=-1).mean()
-
-        loss = kulbach_leibler_divergence(y_,y)#torch.mean(torch.sum(y_*(y_.log()-y.log()), dim=1))
-
- 
-        running_loss += loss.item()*y.shape[0]
-        samples += y.shape[0]
-
-        loss.backward()
-        self.optimizer.step()  
-
-      #print(running_loss/samples)
-
-
-      acc_new = eval_op(self.model, self.loader)["accuracy"]
-      print(acc_new)
-
-      if acc_new < acc:
-        return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
-      else:
-        acc = acc_new
-
-    return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
 
 
 
@@ -260,7 +285,7 @@ def train_op(model, loader, optimizer, scheduler, epochs):
         
         optimizer.zero_grad()
 
-        loss = nn.CrossEntropyLoss()(model(x), y)
+        loss = nn.BCEWithLogitsLoss()(model(x), y)
         running_loss += loss.item()*y.shape[0]
         samples += y.shape[0]
 
@@ -284,7 +309,7 @@ def eval_op(model, loader):
         _, predicted = torch.max(y_.detach(), 1)
         
         samples += y.shape[0]
-        correct += (predicted == y).sum().item()
+        correct += (predicted == torch.argmax(y, dim=1)).sum().item()
 
     return {"accuracy" : correct/samples}
 

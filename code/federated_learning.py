@@ -36,11 +36,11 @@ def run_experiment(xp, xp_count, n_experiments):
   distill_data = data.get_data(hp["distill_dataset"], args.DATA_PATH)
   distill_data = torch.utils.data.Subset(distill_data, np.random.permutation(len(distill_data))[:hp["n_distill"]])
 
-  client_loaders, test_loader = data.get_loaders(train_data, test_data, n_clients=hp["n_clients"], 
+  client_loaders, test_loader, client_data, test_data = data.get_loaders(train_data, test_data, n_clients=hp["n_clients"], 
         classes_per_client=hp["classes_per_client"], batch_size=hp["batch_size"], n_data=None)
   distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=False)
 
-  clients = [Client(model_fn, optimizer_fn, loader) for loader in client_loaders]
+  clients = [Client(model_fn, optimizer_fn, loader, client_dataset=(client_data[i] if hp["distill_phase"] == "clients" else None), aux_dataset=[], distill_loader=distill_loader, **hp) for i, loader in enumerate(client_loaders)]
   server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=0.001, weight_decay=5e-4), test_loader, distill_loader)
   #server.load_model(path=args.CHECKPOINT_PATH, name=hp["pretrained"])
 
@@ -83,8 +83,8 @@ def run_experiment(xp, xp_count, n_experiments):
       #print(hist)
       #exit()
 
-      distill_stats = server.distill(participating_clients, hp["distill_epochs"], mode=hp["distill_mode"])
-      xp.log({"distill_{}".format(key) : value for key, value in distill_stats.items()})
+      distill_stats = server.distill(participating_clients, hp["distill_epochs"], mode=hp["distill_mode"], distill_phase=hp["distill_phase"])
+      xp.log({"distill_{}".format(key) : value for key, value in distill_stats.items() if key != "softlabels"})
 
 
     # Logging

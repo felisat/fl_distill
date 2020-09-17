@@ -63,13 +63,19 @@ def get_data(dataset, path):
 
 def get_loaders(train_data, test_data, n_clients=10, classes_per_client=0, batch_size=128, n_data=None):
 
+  # one-hot encode labels
+  # TODO: all labels seem to start with 1 upwards ?
+  one_hot_matrix = torch.eye(np.max(train_data.targets)+1)
+  train_data.targets = [one_hot_matrix[label] for label in train_data.targets]
+  test_data.targets = [one_hot_matrix[label] for label in test_data.targets]
+
   subset_idcs = split_dirichlet(train_data.targets, n_clients, n_data, classes_per_client)
   client_data = [torch.utils.data.Subset(train_data, subset_idcs[i]) for i in range(n_clients)]
 
   client_loaders = [torch.utils.data.DataLoader(subset, batch_size=batch_size, shuffle=True) for subset in client_data]
   test_loader = torch.utils.data.DataLoader(test_data, batch_size=100)
 
-  return client_loaders, test_loader
+  return client_loaders, test_loader, client_data, test_data
 
 
 
@@ -113,15 +119,13 @@ def split_image_data(labels, n_clients, n_data, classes_per_client):
 
 def split_dirichlet(labels, n_clients, n_data, alpha, double_stochstic=True):
     '''Splits data among the clients according to a dirichlet distribution with parameter alpha'''
-    if isinstance(labels, torch.Tensor):
-      labels = labels.numpy()
-    n_classes = np.max(labels)+1
+    n_classes = labels[0].size(0)
     label_distribution = np.random.dirichlet([alpha]*n_clients, n_classes)
 
     if double_stochstic:
       label_distribution = make_double_stochstic(label_distribution)
 
-    class_idcs = [np.argwhere(np.array(labels)==y).flatten() 
+    class_idcs = [np.argwhere(torch.argmax(torch.stack(labels), dim=1).detach().numpy()==y).flatten() 
            for y in range(n_classes)]
 
     client_idcs = [[] for _ in range(n_clients)]
@@ -154,11 +158,11 @@ def make_double_stochstic(x):
 
 
 def print_split(idcs, labels):
-  n_labels = np.max(labels) + 1 
+  n_labels = labels[0].size(0) 
   print("Data split:")
   splits = []
   for i, idccs in enumerate(idcs):
-    split = np.sum(np.array(labels)[idccs].reshape(1,-1)==np.arange(n_labels).reshape(-1,1), axis=1)
+    split = np.sum(torch.argmax(torch.stack(labels), dim=1).detach().numpy()[idccs].reshape(1,-1)==np.arange(n_labels).reshape(-1,1), axis=1)
     splits += [split]
     if i < 10 or i>len(idcs)-10:
       print(" - Client {}: {:55} -> sum={}".format(i,str(split), np.sum(split)), flush=True)

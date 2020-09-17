@@ -12,24 +12,25 @@ cmdargs=$1
 hyperparameters=' [{
 	"dataset" : ["mnist"], 
 	"distill_dataset" : ["stl10"],
-	"net" : ["lenet_cifar"],
+	"net" : ["vgg11s"],
 	
 
-	"n_clients" : [20],
+	"n_clients" : [5],
 	"classes_per_client" : [0.1],
 	"balancedness" : [1.0],
 
 
-	"communication_rounds" : [20],
+	"communication_rounds" : [3],
 	"participation_rate" : [0.4],
-	"local_epochs" : [20],
-	"distill_epochs" : [10],
-	"n_distill" : [100000], 
+	"local_epochs" : [1],
+	"distill_epochs" : [1],
+	"n_distill" : [1000], 
 
 	
 	"batch_size" : [128],
-	"aggregation_mode" : ["FD", "FA", "FAD"],
+	"mode" : ["FAD"],
 	"distill_mode" : ["regular"],
+	"distill_phase" : ["server","clients"],
 	"only_linear" : [false],
 	
 
@@ -61,7 +62,7 @@ if [[ "$HOSTNAME" == *"vca"* ]]; then # Cluster
 else # Local
 
 	RESULTS_PATH="results/"
-	DATA_PATH="/home/sattler/Data/PyTorch/"
+	DATA_PATH="data/"
 	CHECKPOINT_PATH="checkpoints/"
 
 	python -u code/federated_learning.py --hp="$hyperparameters" --RESULTS_PATH="$RESULTS_PATH" --DATA_PATH="$DATA_PATH" --CHECKPOINT_PATH="$CHECKPOINT_PATH" $cmdargs
