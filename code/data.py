@@ -2,14 +2,6 @@ import torch, torchvision
 import numpy as np
 
 def get_mnist(path):
-
-  class AddChannels(object):
-    def __init__(self, n_channels=3):
-      self.n_channels = n_channels
-    def __call__(self, x):
-      return torch.cat([x]*self.n_channels, dim=0)
-
-
   transforms = torchvision.transforms.Compose([ torchvision.transforms.Resize((32,32)),
                                                 torchvision.transforms.ToTensor(),    
                                                 AddChannels()
@@ -19,6 +11,18 @@ def get_mnist(path):
   test_data = torchvision.datasets.MNIST(root=path+"MNIST", train=False, download=True, transform=transforms)
 
   return train_data, test_data
+
+
+def get_emnist(path):
+  transforms = torchvision.transforms.Compose([ torchvision.transforms.Resize((32,32)),
+                                                torchvision.transforms.ToTensor(),    
+                                                AddChannels()
+                                                #torchvision.transforms.Normalize((0.1307,), (0.3081,))])
+                                                ])
+  data = torchvision.datasets.EMNIST(root=path, split="byclass", download=False, transform=transforms)
+  #test_data = torchvision.datasets.MNIST(root=path+"EMNIST", train=False, download=True, transform=transforms)
+
+  return data
 
 def get_cifar10(path):
   transforms = torchvision.transforms.Compose([
@@ -59,17 +63,19 @@ def get_svhn(path):
 
 
 def get_data(dataset, path):
-  return {"cifar10" : get_cifar10, "mnist" : get_mnist, "stl10" : get_stl10, "svhn" : get_svhn}[dataset](path)
+  return {"cifar10" : get_cifar10, "mnist" : get_mnist, "emnist" : get_emnist,"stl10" : get_stl10, "svhn" : get_svhn}[dataset](path)
 
 def get_loaders(train_data, test_data, n_clients=10, classes_per_client=0, batch_size=128, n_data=None):
 
   subset_idcs = split_dirichlet(train_data.targets, n_clients, n_data, classes_per_client)
   client_data = [torch.utils.data.Subset(train_data, subset_idcs[i]) for i in range(n_clients)]
 
+  label_counts = [np.bincount(train_data.targets[i], minlength=10) for i in subset_idcs]
+
   client_loaders = [torch.utils.data.DataLoader(subset, batch_size=batch_size, shuffle=True) for subset in client_data]
   test_loader = torch.utils.data.DataLoader(test_data, batch_size=100)
 
-  return client_loaders, test_loader
+  return client_loaders, test_loader, label_counts
 
 
 
@@ -160,10 +166,19 @@ def print_split(idcs, labels):
   for i, idccs in enumerate(idcs):
     split = np.sum(np.array(labels)[idccs].reshape(1,-1)==np.arange(n_labels).reshape(-1,1), axis=1)
     splits += [split]
-    if i < 10 or i>len(idcs)-10:
+    if len(idcs) < 30 or i < 10 or i>len(idcs)-10:
       print(" - Client {}: {:55} -> sum={}".format(i,str(split), np.sum(split)), flush=True)
     elif i==len(idcs)-10:
       print(".  "*10+"\n"+".  "*10+"\n"+".  "*10)
 
-  print(" - Total:      {}".format(np.stack(splits, axis=0).sum(axis=0)))
+  print(" - Total:     {}".format(np.stack(splits, axis=0).sum(axis=0)))
   print()
+
+
+
+
+class AddChannels(object):
+  def __init__(self, n_channels=3):
+    self.n_channels = n_channels
+  def __call__(self, x):
+    return torch.cat([x]*self.n_channels, dim=0)

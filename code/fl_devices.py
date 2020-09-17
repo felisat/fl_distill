@@ -24,6 +24,8 @@ class Device(object):
     self.optimizer_fn = optimizer_fn
     self.optimizer = optimizer_fn(self.model.parameters())   
     self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=1, gamma=0.96)  
+
+    self.c_round = 0
     
   def evaluate(self, loader=None):
     return eval_op(self.model, self.loader if not loader else loader)
@@ -43,11 +45,14 @@ class Client(Device):
   def __init__(self, model_fn, optimizer_fn, loader, init=None):
     super().__init__(model_fn, optimizer_fn, loader, init)
     
-  def synchronize_with_server(self, server):
+  def synchronize_with_server(self, server, c_round):
     self.model.load_state_dict(server.model.state_dict())
+    self.c_round = c_round
     #copy(target=self.W, source=server.W)
     
-  def compute_weight_update(self, epochs=1, loader=None):
+  def compute_weight_update(self, epochs=1, loader=None, reset_optimizer=True):
+    if reset_optimizer:
+      self.optimizer = self.optimizer_fn(self.model.parameters())  
     train_stats = train_op(self.model, self.loader if not loader else loader, self.optimizer, self.scheduler, epochs)
     return train_stats
 
@@ -162,17 +167,42 @@ class Server(Device):
   def distill(self, clients, epochs=1, mode="regular"):
     print("Distilling...")
     self.model.train()  
-
     #vat_loss = VATLoss(xi=10.0, eps=1.0, ip=1)
 
-    assert mode in ["regular", "weighted", "pate", "knn", "pate_up"], "mode has to be one of [regular, pate, knn]"
+    assert mode in ["regular", "weighted", "pate", "knn", "pate_up", "momentum", "count_weighted"], "mode has to be one of [regular, pate, knn]"
+
+    # Use only clients who participated in the previous round for distilling except if momentum mode
+    c_max = max([client.c_round for client in clients])
+    if mode not in ["momentum"]: 
+      clients = [c for c in clients if c.c_round==c_max] 
 
     acc = 0
-    import time
     for ep in range(epochs):
       running_loss, samples = 0.0, 0
       for x, _ in tqdm(self.distill_loader):   
         x = x.to(device)
+
+        if mode == "momentum":
+          y = torch.zeros([x.shape[0], 10], device="cuda")
+          w = 0
+          
+          for i, client in enumerate(clients):
+            if client.c_round > 0:
+              y_p = client.predict(x)
+              y += 0.8**(c_max - client.c_round)*y_p.detach()
+              w += 0.8**(c_max - client.c_round)
+          y = y / w
+
+        if mode == "count_weighted":
+          y = torch.zeros([x.shape[0], 10], device="cuda")
+          for i, client in enumerate(clients):
+            normalized_counts = torch.Tensor(client.label_counts/client.label_counts.sum()).cuda()
+
+            y_p = 10**(client.predict(x)-normalized_counts)
+            y_p /= y_p.sum(dim=1).view(-1,1)
+
+            y += (y_p/len(clients)).detach()        
+
 
         if mode == "regular":
           y = torch.zeros([x.shape[0], 10], device="cuda")

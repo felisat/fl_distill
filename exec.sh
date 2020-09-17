@@ -11,7 +11,7 @@ cmdargs=$1
 
 hyperparameters=' [{
 	"dataset" : ["mnist"], 
-	"distill_dataset" : ["stl10"],
+	"distill_dataset" : ["emnist"],
 	"net" : ["lenet_cifar"],
 	
 
@@ -28,7 +28,7 @@ hyperparameters=' [{
 
 	
 	"batch_size" : [128],
-	"aggregation_mode" : ["FD", "FA", "FAD"],
+	"aggregation_mode" : ["FD"],
 	"distill_mode" : ["regular"],
 	"only_linear" : [false],
 	
@@ -37,7 +37,7 @@ hyperparameters=' [{
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["mnist_noniid/"],
+	"log_path" : ["noniid2/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
