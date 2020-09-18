@@ -5,6 +5,8 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 
+from models import outlier_net
+
 from virtual_adversarial_training import VATLoss
 
 
@@ -148,6 +150,52 @@ class Client(Device):
     return torch.cat(predictions, dim=0).detach().cpu().numpy()
 
 
+  def train_outlier_detector(self):
+    self.outlier_model = outlier_net().cuda()
+    optimizer = torch.optim.Adam(self.outlier_model.parameters(), lr=0.001, weight_decay=1e-6)
+
+    x = iter(self.loader).next()[0].cuda()
+    self.outlier_c = torch.mean(self.outlier_model(x), dim=0).detach()
+
+    n_epochs = 100
+    for epoch in range(n_epochs+1):
+        train_loss = 0.0
+        for x, _ in self.loader:
+            x = x.cuda()
+            optimizer.zero_grad()
+            r = self.outlier_model(x)
+            loss = torch.mean((r -self.outlier_c)**2)
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.item()*x.size(0)
+                
+        train_loss = train_loss/len(self.loader)
+    print('Epoch: {} \tTraining Loss: {}'.format(epoch, train_loss))
+    self.mean_outlier_loss = train_loss
+
+
+  def predict_outlier_score(self, x):
+    with torch.no_grad():
+      r = self.outlier_model(x)
+      loss = torch.mean((r - self.outlier_c)**2, dim=-1)
+
+    return loss.detach()/self.mean_outlier_loss
+
+
+  def train_one_class_svm(self):
+    from sklearn.decomposition import PCA
+    from sklearn.svm import OneClassSVM
+    X_train = torch.cat([x[0][:,0] for x in self.loader], dim=0).reshape(-1,32*32).numpy()
+    self.pca = PCA(n_components=0.95, svd_solver="full", whiten=True)
+    self.pca.fit(X_train)
+    self.outlier_model = OneClassSVM(kernel="rbf", gamma=2**-5).fit(self.pca.transform(X_train))
+
+  def predict_outlier_score_svm(self, x):
+    x = x[:,0].cpu().detach().numpy().reshape(-1,32*32)
+    x = self.pca.transform(x)
+    return self.outlier_model.score_samples(x)
+
+
 
 
     
@@ -169,7 +217,8 @@ class Server(Device):
     self.model.train()  
     #vat_loss = VATLoss(xi=10.0, eps=1.0, ip=1)
 
-    assert mode in ["regular", "weighted", "pate", "knn", "pate_up", "momentum", "count_weighted"], "mode has to be one of [regular, pate, knn]"
+    valid_modes = ["regular", "weighted", "pate", "knn", "pate_up", "momentum", "count_weighted", "outlier_score"]
+    assert mode in valid_modes, "mode has to be one of {}".format(valid_modes)
 
     # Use only clients who participated in the previous round for distilling except if momentum mode
     c_max = max([client.c_round for client in clients])
@@ -216,6 +265,23 @@ class Server(Device):
           for i, client in enumerate(clients):
             y_p = client.predict(x)
             weight = client.predict_knn_weight(x).view(-1,1)
+
+            y += (y_p*weight).detach()
+            w += weight.detach()
+          y = y / w
+
+
+        if mode == "outlier_score":
+          y = torch.zeros([x.shape[0], 10], device="cuda")
+          w = torch.zeros([x.shape[0], 1], device="cuda")
+          for i, client in enumerate(clients):
+            y_p = client.predict(x)
+            weight = torch.Tensor(client.predict_outlier_score_svm(x).reshape(-1,1)).cuda()
+
+            #print(client.label_counts)
+            #for i,j in zip(_,weight):
+            #  print(i, j)
+            #exit()
 
             y += (y_p*weight).detach()
             w += weight.detach()
