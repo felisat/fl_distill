@@ -11,7 +11,7 @@ cmdargs=$1
 
 hyperparameters=' [{
 	"dataset" : ["mnist"], 
-	"distill_dataset" : ["mnist"],
+	"distill_dataset" : ["emnist"],
 	"net" : ["lenet_cifar"],
 	
 
