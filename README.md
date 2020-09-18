@@ -75,9 +75,10 @@
 - `"local_epochs"` : Local training epochs at every client
 - `"distill_epochs"` : Number of epochs used for distillation
 - `"n_distill"` : Size of the distilation dataset 
-- `"use_distillation"` : Train global model via distillation 
-- `"aggregate"` : Perform Federated Averaging step before distillation
-- `"compress"` : Compress soft labels before communication
+- `"distill_mode"` : The distillation mode, chosse from ("regular", "pate", "pate_up", ..)
+- `"aggregation_mode"` : Choose from "FA" (Federated Averaging), "FD" (Federated Distillation), "FAD" (FA + FD)
+- `"pretrained"` : Load a pretrained model from the /checkpoints directory according to the distillation data that is used, e.g. {"stl10" : "simclr_net_bn_stl10_80epochs.pth"}
+
 
 ### Logging 
 - `"log_frequency"` : Number of communication rounds after which results are logged and saved to disk
