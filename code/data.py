@@ -65,7 +65,7 @@ def get_loaders(train_data, test_data, n_clients=10, classes_per_client=0, batch
 
   # one-hot encode labels
   # TODO: all labels seem to start with 1 upwards ?
-  one_hot_matrix = torch.eye(np.max(train_data.targets)+1)
+  one_hot_matrix = torch.eye(torch.max(torch.tensor(train_data.targets))+1)
   train_data.targets = [one_hot_matrix[label] for label in train_data.targets]
   test_data.targets = [one_hot_matrix[label] for label in test_data.targets]
 
