@@ -33,7 +33,7 @@ def run_experiment(xp, xp_count, n_experiments):
   model_fn, optimizer, optimizer_hp = models.get_model(hp["net"])
   optimizer_fn = lambda x : optimizer(x, **{k : hp[k] if k in hp else v for k, v in optimizer_hp.items()}) 
   train_data, test_data = data.get_data(hp["dataset"], args.DATA_PATH)
-  distill_data = data.get_data(hp["distill_dataset"], args.DATA_PATH)[0]
+  distill_data = data.get_data(hp["distill_dataset"], args.DATA_PATH)
   distill_data = torch.utils.data.Subset(distill_data, np.random.permutation(len(distill_data))[:hp["n_distill"]])
 
   client_loaders, test_loader, label_counts = data.get_loaders(train_data, test_data, n_clients=hp["n_clients"], 

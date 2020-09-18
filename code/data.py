@@ -70,7 +70,7 @@ def get_loaders(train_data, test_data, n_clients=10, classes_per_client=0, batch
   subset_idcs = split_dirichlet(train_data.targets, n_clients, n_data, classes_per_client)
   client_data = [torch.utils.data.Subset(train_data, subset_idcs[i]) for i in range(n_clients)]
 
-  label_counts = [np.bincount(train_data.targets[i], minlength=10) for i in subset_idcs]
+  label_counts = [np.bincount(np.array(train_data.targets)[i], minlength=10) for i in subset_idcs]
 
   client_loaders = [torch.utils.data.DataLoader(subset, batch_size=batch_size, shuffle=True) for subset in client_data]
   test_loader = torch.utils.data.DataLoader(test_data, batch_size=100)

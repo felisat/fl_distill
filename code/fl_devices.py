@@ -185,7 +185,7 @@ class Client(Device):
   def train_one_class_svm(self):
     from sklearn.decomposition import PCA
     from sklearn.svm import OneClassSVM
-    X_train = torch.cat([x[0][:,0] for x in self.loader], dim=0).reshape(-1,32*32).numpy()
+    X_train = torch.cat([x[0][:,0] for x in self.loader], dim=0).reshape(-1,1*32*32).numpy()
     self.pca = PCA(n_components=0.95, svd_solver="full", whiten=True)
     self.pca.fit(X_train)
     self.outlier_model = OneClassSVM(kernel="rbf", gamma=2**-5).fit(self.pca.transform(X_train))
