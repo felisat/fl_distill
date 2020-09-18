@@ -10,8 +10,8 @@
 cmdargs=$1
 
 hyperparameters=' [{
-	"dataset" : ["mnist"], 
-	"distill_dataset" : ["emnist"],
+	"dataset" : ["cifar10"], 
+	"distill_dataset" : ["stl10"],
 	"net" : ["lenet_cifar"],
 	
 
@@ -22,7 +22,7 @@ hyperparameters=' [{
 
 	"communication_rounds" : [20],
 	"participation_rate" : [0.4],
-	"local_epochs" : [1, 5, 20],
+	"local_epochs" : [20],
 	"distill_epochs" : [10],
 	"n_distill" : [100000], 
 
@@ -37,7 +37,7 @@ hyperparameters=' [{
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["outlier_score3/"],
+	"log_path" : ["outlier_score_cifar/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
