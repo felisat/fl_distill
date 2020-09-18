@@ -38,7 +38,7 @@ hyperparameters=' [{
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["mnist_noniid/"],
+	"log_path" : ["noniid/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 

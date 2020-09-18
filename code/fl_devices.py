@@ -137,17 +137,15 @@ class Device(object):
     # update clients with new softlabel data
     if distill_phase == "clients":
       softlabels = torch.cat(softlabels)
-      accs = []
       for client in clients:
         client.softlabels = softlabels
         client.make_combined_dataloader()
-        accs.append(eval_op(client.model, self.loader)["accuracy"])
-      return {"loss" : 1, "acc" : accs, "epochs" : 1}
+      return {"loss" : 1, "acc" : [eval_op(c.model, self.loader)["accuracy"] for c in self.clients], "epochs" : 1}
 
     return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
       
 class Client(Device):
-  def __init__(self, model_fn, optimizer_fn, loader=None, client_dataset=[], aux_dataset=[], distill_loader=None, test_loader=None, init=None, **kwargs):
+  def __init__(self, model_fn, optimizer_fn, loader=None, client_dataset=[], aux_dataset=[], distill_loader=None, init=None, **kwargs):
     super().__init__(model_fn, optimizer_fn, loader, distill_loader, init)
     self.kwargs = kwargs
 
@@ -156,7 +154,6 @@ class Client(Device):
     if client_dataset is not None:
       self.client_dataset = client_dataset
       self.aux_dataset = aux_dataset
-      self.test_loader = test_loader
       self.loader = self.make_combined_dataloader()
 
 
@@ -271,8 +268,9 @@ class Client(Device):
    
  
 class Server(Device):
-  def __init__(self, model_fn, optimizer_fn, loader, distill_loader, init=None):
+  def __init__(self, model_fn, optimizer_fn, loader, distill_loader, init=None, clients=None):
     super().__init__(model_fn, optimizer_fn, loader, distill_loader, init)
+    self.clients = clients
     
   def select_clients(self, clients, frac=1.0):
     return random.sample(clients, int(len(clients)*frac)) 

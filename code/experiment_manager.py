@@ -12,16 +12,16 @@ def save_results(results_dict, path, name, verbose=True):
 
     if not os.path.exists(path):
         os.makedirs(path)
-    np.savez(path+name, **results_numpy) 
+    np.savez(os.path.join(path,name), **results_numpy) 
     if verbose:
-        print("Saved results to ", path+name+".npz")
+        print("Saved results to ",os.path.join(path,name + ".npz"))
 
 
 def load_results(path, filename, verbose=True):
-    results_dict = np.load(path+filename, allow_pickle=True)
+    results_dict = np.load(os.path.join(path,filename), allow_pickle=True)
 
     if verbose:
-        print("Loaded results from "+path+filename)
+        print("Loaded results from "+os.path.join(path,filename))
     return results_dict
 
 
@@ -107,7 +107,7 @@ class Experiment():
                 
     def save_to_disc(self, path, name):
         if path:
-            save_results(self.to_dict(), path+name, 'xp_'+str(self.hyperparameters['log_id']))
+            save_results(self.to_dict(), os.path.join(path,name), 'xp_'+str(self.hyperparameters['log_id']))
 
 
 
@@ -136,7 +136,7 @@ def get_list_of_experiments(path, only_finished=False, verbose=True):
 
     os.chdir(path)
     for file in glob.glob("*.npz"):
-        list_of_experiments += [Experiment(hp_dict=load_results(path+"/",file, verbose=False))]
+        list_of_experiments += [Experiment(hp_dict=load_results(path,file, verbose=False))]
 
     if only_finished:
         list_of_experiments = [xp for xp in list_of_experiments if 'finished' in xp.hyperparameters and xp.hyperparameters['finished']]
@@ -154,7 +154,7 @@ def get_list_of_experiments(path, only_finished=False, verbose=True):
 
 def get_experiment(path, name, verbose=False):
     '''Returns one result saved at location path'''
-    experiment = Experiment(hp_dict=load_results(path+"/",name+".npz", verbose=False))
+    experiment = Experiment(hp_dict=load_results(os.path.join(path,name + ".npz"), verbose=False))
 
     if verbose:
         print("Loaded ",1, " Result from ", path)
