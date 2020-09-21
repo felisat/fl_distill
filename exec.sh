@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=felix.sattler@hhi.fraunhofer.de
+#SBATCH --mail-user=tim.korjakow@hhi.fraunhofer.de
 #SBATCH --output=out/%j.out
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
@@ -15,22 +15,22 @@ hyperparameters=' [{
 	"net" : ["vgg11s"],
 	
 
-	"n_clients" : [5],
+	"n_clients" : [20],
 	"classes_per_client" : [0.1],
 	"balancedness" : [1.0],
 
 
-	"communication_rounds" : [3],
+	"communication_rounds" : [20],
 	"participation_rate" : [0.4],
-	"local_epochs" : [3],
-	"distill_epochs" : [3],
-	"n_distill" : [1000], 
+	"local_epochs" : [20],
+	"distill_epochs" : [10],
+	"n_distill" : [100000], 
 
 	
 	"batch_size" : [128],
-	"aggregation_mode" : ["FAD"],
+	"aggregation_mode" : ["FD", "FAD"],
 	"distill_mode" : ["regular"],
-	"distill_phase" : ["clients"],
+	"distill_phase" : ["server","clients"],
 	"only_linear" : [false],
 	
 
