@@ -42,7 +42,7 @@ def run_experiment(xp, xp_count, n_experiments):
   distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=False)
 
 
-  clients = [Client(model_fn, optimizer_fn, loader, client_dataset=(client_data[i] if hp["distill_phase"] == "clients" else None), aux_dataset=distill_data_raw, **hp) for i, loader in enumerate(client_loaders)]
+  clients = [Client(model_fn, optimizer_fn, loader, client_dataset=(client_data[i] if hp["distill_phase"] == "clients" else None), aux_data=distill_data_raw, **hp) for i, loader in enumerate(client_loaders)]
   server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=0.001, weight_decay=5e-4), test_loader, distill_loader, clients=clients)
   #server.load_model(path=args.CHECKPOINT_PATH, name=hp["pretrained"])
 
