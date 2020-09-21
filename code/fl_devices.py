@@ -144,7 +144,7 @@ class Device(object):
     return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
       
 class Client(Device):
-  def __init__(self, model_fn, optimizer_fn, loader=None, client_dataset=[], aux_data=[], init=None, **kwargs):
+  def __init__(self, model_fn, optimizer_fn, loader=None, client_dataset=[], aux_data=[], distill_loader=None, init=None, **kwargs):
     super().__init__(model_fn, optimizer_fn, loader, distill_loader, init)
     self.kwargs = kwargs
 
