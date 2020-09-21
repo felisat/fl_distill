@@ -152,7 +152,7 @@ class Client(Device):
 
     if client_dataset is not None:
       self.client_dataset = client_dataset
-      self.aux_data = aux_data.to(device)
+      self.aux_data = aux_data.to('cpu')
       self.set_combined_dataloader()
       print("Initial size:", len(self.loader))
 
@@ -161,7 +161,7 @@ class Client(Device):
     self.loader = torch.utils.data.DataLoader(
       ConcatDataset(
         [self.client_dataset, TensorDataset(self.aux_data, softlabels.to('cpu'))]  if softlabels is not None else [self.client_dataset]
-      ), batch_size=self.kwargs["batch_size"], shuffle=True, pin_memory=True)
+      ), batch_size=self.kwargs["batch_size"], shuffle=True)
 
   def synchronize_with_server(self, server):
     self.model.load_state_dict(server.model.state_dict())
