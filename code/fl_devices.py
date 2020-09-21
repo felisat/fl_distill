@@ -138,15 +138,13 @@ class Device(object):
     if distill_phase == "clients":
       softlabels = torch.cat(softlabels)
       for client in clients:
-        print(softlabels.size())
         client.set_combined_dataloader(softlabels=softlabels)
-        print("Update size:", len(client.loader))
       return {"loss" : 1, "acc" : [eval_op(c.model, self.loader)["accuracy"] for c in self.clients], "epochs" : 1}
 
     return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
       
 class Client(Device):
-  def __init__(self, model_fn, optimizer_fn, loader=None, client_dataset=[], aux_dataset=[], distill_loader=None, init=None, **kwargs):
+  def __init__(self, model_fn, optimizer_fn, loader=None, client_dataset=[], aux_data=[], init=None, **kwargs):
     super().__init__(model_fn, optimizer_fn, loader, distill_loader, init)
     self.kwargs = kwargs
 
@@ -154,7 +152,7 @@ class Client(Device):
 
     if client_dataset is not None:
       self.client_dataset = client_dataset
-      self.aux_data = torch.stack([x for x,y in aux_dataset], dim=0)
+      self.aux_data = aux_data
       self.set_combined_dataloader()
       print("Initial size:", len(self.loader))
 
