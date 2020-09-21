@@ -138,8 +138,9 @@ class Device(object):
     if distill_phase == "clients":
       softlabels = torch.cat(softlabels)
       for client in clients:
-        client.softlabels = softlabels
-        client.loader = client.make_combined_dataloader()
+        print(softlabels.size())
+        client.set_combined_dataloader(softlabels=softlabels)
+        print("Update size:", len(client.loader))
       return {"loss" : 1, "acc" : [eval_op(c.model, self.loader)["accuracy"] for c in self.clients], "epochs" : 1}
 
     return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
@@ -153,17 +154,15 @@ class Client(Device):
 
     if client_dataset is not None:
       self.client_dataset = client_dataset
-      self.aux_dataset = aux_dataset
-      self.loader = self.make_combined_dataloader()
+      self.aux_data = torch.stack([x for x,y in aux_dataset], dim=0)
+      self.set_combined_dataloader()
+      print("Initial size:", len(self.loader))
 
 
-  def make_combined_dataloader(self, softlabels=None):
-    self.softlabels = softlabels
-    if softlabels is not None:
-      print(softlabels.size())
-    return torch.utils.data.DataLoader(
+  def set_combined_dataloader(self, softlabels=None):
+    self.loader = torch.utils.data.DataLoader(
       ConcatDataset(
-        [self.client_dataset, TensorDataset(self.aux_dataset, self.softlabels)]  if self.softlabels is not None else [self.client_dataset]
+        [self.client_dataset, TensorDataset(self.aux_data, softlabels)]  if softlabels is not None else [self.client_dataset]
       ), batch_size=self.kwargs["batch_size"], shuffle=True, pin_memory=True)
 
   def synchronize_with_server(self, server):
@@ -294,7 +293,7 @@ def train_op(model, loader, optimizer, scheduler, epochs):
         samples += y.shape[0]
 
         loss.backward()
-        optimizer.step()  
+        optimizer.step() 
       #scheduler.step()
 
     return {"loss" : running_loss / samples}
