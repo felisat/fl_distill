@@ -139,7 +139,7 @@ class Device(object):
       softlabels = torch.cat(softlabels)
       for client in clients:
         client.softlabels = softlabels
-        client.make_combined_dataloader()
+        client.loader = client.make_combined_dataloader()
       return {"loss" : 1, "acc" : [eval_op(c.model, self.loader)["accuracy"] for c in self.clients], "epochs" : 1}
 
     return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
