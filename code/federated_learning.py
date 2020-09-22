@@ -59,7 +59,7 @@ def run_experiment(xp, xp_count, n_experiments):
         param.requires_grad = False
 
 
-  feature_extractor = models.simclr_net_bn(pretrained_path="/home/sattler/Workspace/PyTorch/fl_distill/checkpoints/simclr_net_bn_stl10_80epochs.pth").cuda()
+  feature_extractor = models.simclr_net_bn(pretrained_path=args.CHECKPOINT_PATH+"simclr_net_bn_stl10_80epochs.pth").cuda()
   feature_extractor.eval()
   for client in clients:
     client.feature_extractor = feature_extractor
