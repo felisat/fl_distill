@@ -12,7 +12,7 @@ cmdargs=$1
 hyperparameters=' [{
 	"dataset" : ["cifar10"], 
 	"distill_dataset" : ["stl10"],
-	"net" : ["simclr_vgg11"],
+	"net" : ["lenet_cifar"],
 	
 
 	"n_clients" : [20],
@@ -37,7 +37,7 @@ hyperparameters=' [{
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["outlier_score_cifar_vgg11/"],
+	"log_path" : ["outlier_score_cifar_lenet/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
