@@ -43,6 +43,7 @@ def run_experiment(xp, xp_count, n_experiments):
   clients = [Client(model_fn, optimizer_fn, loader) for loader in client_loaders]
   server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=0.001, weight_decay=5e-4), test_loader, distill_loader)
   #server.load_model(path=args.CHECKPOINT_PATH, name=hp["pretrained"])
+  #server.model.load_state_dict(torch.load("/home/sattler/Workspace/PyTorch/fl_distill/checkpoints/simclr_net_bn_stl10_80epochs.pth", map_location='cpu'), strict=False)
 
   for client, counts in zip(clients, label_counts):
     client.label_counts = counts
@@ -57,6 +58,11 @@ def run_experiment(xp, xp_count, n_experiments):
       for param in device.model.f.parameters():
         param.requires_grad = False
 
+
+  feature_extractor = models.simclr_net_bn(pretrained_path="/home/sattler/Workspace/PyTorch/fl_distill/checkpoints/simclr_net_bn_stl10_80epochs.pth").cuda()
+  feature_extractor.eval()
+  for client in clients:
+    client.feature_extractor = feature_extractor
 
   print("Train Outlier Detectors")
   for client in tqdm(clients):

@@ -185,15 +185,23 @@ class Client(Device):
   def train_one_class_svm(self):
     from sklearn.decomposition import PCA
     from sklearn.svm import OneClassSVM
-    X_train = torch.cat([x[0][:,0] for x in self.loader], dim=0).reshape(-1,1*32*32).numpy()
+    if self.feature_extractor is not None:
+      X_train = torch.cat([self.feature_extractor.f(x[0][:,:].cuda()).detach().cpu() for x in self.loader], dim=0).reshape(-1,512).numpy()
+    else:
+      X_train = torch.cat([x[0][:,:] for x in self.loader], dim=0).reshape(-1,3*32*32).numpy()
     self.pca = PCA(n_components=0.95, svd_solver="full", whiten=True)
     self.pca.fit(X_train)
-    self.outlier_model = OneClassSVM(kernel="rbf", gamma=2**-5).fit(self.pca.transform(X_train))
+    X_train_ = self.pca.transform(X_train)
+    self.outlier_model = OneClassSVM(kernel="rbf", gamma=2**-7).fit(X_train_)
+
 
   def predict_outlier_score_svm(self, x):
-    x = x[:,0].cpu().detach().numpy().reshape(-1,32*32)
+    if self.feature_extractor is not None:
+      x = self.feature_extractor.f(x.cuda()).detach().cpu().numpy().reshape(-1,512)
+    else:
+      x = x[:,:].cpu().detach().numpy().reshape(-1,3*32*32)
     x = self.pca.transform(x)
-    return self.outlier_model.score_samples(x)
+    return self.outlier_model.score_samples(x)**2
 
 
 
