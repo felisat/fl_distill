@@ -203,7 +203,7 @@ def apply_gn(model):
             
         if isinstance(c, nn.BatchNorm2d):
             #print(n, c.num_features)
-            setattr(model, n, torch.nn.GroupNorm(num_groups=2, num_channels=c.num_features))  
+            setattr(model, n, torch.nn.GroupNorm(num_groups=4, num_channels=c.num_features))  
 
 
 
