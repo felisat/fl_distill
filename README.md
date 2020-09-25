@@ -5,19 +5,21 @@
 
 ### Run on local machine
 
-1.) In `exec.sh` define paths
+1.) Install [Poetry](https://python-poetry.org/docs/) and run `poetry install` in the root directory of the repo.
+
+2.) In `exec.sh` define paths
 
 	RESULTS_PATH="results/"
 	DATA_PATH="/path/to/where/you/store/your/datasets"
 	CHECKPOINT_PATH="checkpoints/"
   
-2.) and set the hyperparameters
+3.) and set the hyperparameters
   
     hyperparameters="[{...}]"
 
-3.) Run via
+4.) Run via
 
-    bash exec.sh
+    poetry run bash exec.sh
 
 ### Run on vca cluster
 
