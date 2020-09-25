@@ -7,17 +7,19 @@
 
 1.) Install [Poetry](https://python-poetry.org/docs/) and run `poetry install` in the root directory of the repo.
 
-2.) In `exec.sh` define paths
+2.) If you have a CUDA-capable device run `poetry add torch torchvision` in order to install the current Pytorch version and all dependencies. If you want to use a CUDA-less device run `poetry run pip install torch==1.6.0+cpu torchvision==0.7.0+cpu -f https://download.pytorch.org/whl/torch_stable.html`.
+
+3.) In `exec.sh` define paths
 
 	RESULTS_PATH="results/"
 	DATA_PATH="/path/to/where/you/store/your/datasets"
 	CHECKPOINT_PATH="checkpoints/"
   
-3.) and set the hyperparameters
+4.) and set the hyperparameters
   
     hyperparameters="[{...}]"
 
-4.) Run via
+5.) Run via
 
     poetry run bash exec.sh
 
