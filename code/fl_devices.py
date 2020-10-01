@@ -44,8 +44,9 @@ class Device(object):
     
       
 class Client(Device):
-  def __init__(self, model_fn, optimizer_fn, loader, init=None):
+  def __init__(self, model_fn, optimizer_fn, loader, init=None, idnum=None):
     super().__init__(model_fn, optimizer_fn, loader, init)
+    self.id = idnum
     
   def synchronize_with_server(self, server, c_round):
     self.model.load_state_dict(server.model.state_dict())
@@ -63,6 +64,14 @@ class Client(Device):
     self.model.eval()
     with torch.no_grad():
       y_ = nn.Softmax(1)(self.model(x))
+
+    return y_
+
+  def predict_logit(self, x):
+    """Softmax prediction on input"""
+    self.model.eval()
+    with torch.no_grad():
+      y_ = self.model(x)
 
     return y_
 
@@ -225,7 +234,7 @@ class Server(Device):
     self.model.train()  
     #vat_loss = VATLoss(xi=10.0, eps=1.0, ip=1)
 
-    valid_modes = ["regular", "weighted", "pate", "knn", "pate_up", "momentum", "count_weighted", "outlier_score"]
+    valid_modes = ["regular", "mean_logits", "weighted", "pate", "knn", "pate_up", "momentum", "count_weighted", "outlier_score"]
     assert mode in valid_modes, "mode has to be one of {}".format(valid_modes)
 
     # Use only clients who participated in the previous round for distilling except if momentum mode
@@ -266,6 +275,15 @@ class Server(Device):
           for i, client in enumerate(clients):
             y_p = client.predict(x)
             y += (y_p/len(clients)).detach()
+
+
+        if mode == "mean_logits":
+          y = torch.zeros([x.shape[0], 10], device="cuda")
+          for i, client in enumerate(clients):
+            y_p = client.predict_logit(x)
+            y += (y_p/len(clients)).detach()
+
+          y = nn.Softmax(1)(y)
 
         if mode == "weighted":
           y = torch.zeros([x.shape[0], 10], device="cuda")

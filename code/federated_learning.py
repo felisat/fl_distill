@@ -40,8 +40,8 @@ def run_experiment(xp, xp_count, n_experiments):
         classes_per_client=hp["classes_per_client"], batch_size=hp["batch_size"], n_data=None)
   distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=False)
 
-  clients = [Client(model_fn, optimizer_fn, loader) for loader in client_loaders]
-  server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=0.001, weight_decay=5e-4), test_loader, distill_loader)
+  clients = [Client(model_fn, optimizer_fn, loader, idnum=i) for i, loader in enumerate(client_loaders)]
+  server = Server(model_fn, lambda x : torch.optim.SGD(x, lr=0.01, momentum=0.9), test_loader, distill_loader)
   #server.load_model(path=args.CHECKPOINT_PATH, name=hp["pretrained"])
   #server.model.load_state_dict(torch.load("/home/sattler/Workspace/PyTorch/fl_distill/checkpoints/simclr_net_bn_stl10_80epochs.pth", map_location='cpu'), strict=False)
 
@@ -64,9 +64,10 @@ def run_experiment(xp, xp_count, n_experiments):
   for client in clients:
     client.feature_extractor = feature_extractor
 
-  print("Train Outlier Detectors")
-  for client in tqdm(clients):
-    client.train_one_class_svm()
+  if hp["distill_mode"] == "outlier_score":
+    print("Train Outlier Detectors")
+    for client in tqdm(clients):
+      client.train_one_class_svm()
 
   # print model
   models.print_model(server.model)
@@ -79,6 +80,7 @@ def run_experiment(xp, xp_count, n_experiments):
   for c_round in range(1, hp["communication_rounds"]+1):
 
     participating_clients = server.select_clients(clients, hp["participation_rate"])
+    xp.log({"participating_clients" : np.array([c.id for c in participating_clients])})
 
     for client in tqdm(participating_clients):
       client.synchronize_with_server(server, c_round)
@@ -91,7 +93,7 @@ def run_experiment(xp, xp_count, n_experiments):
     
     if hp["aggregation_mode"] in ["FD", "FAD", "FknnD"]:
 
-      #xp.log({"predictions" : clients[0].compute_prediction_matrix(distill_loader)})
+      #xp.log({"predictions" : np.stack([client.compute_prediction_matrix(distill_loader) for client in participating_clients])})
 
       #hist = server.compute_prediction_histogram(participating_clients)
       #print(hist)
