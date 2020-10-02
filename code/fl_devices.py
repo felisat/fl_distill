@@ -4,7 +4,7 @@ from tqdm import tqdm
 import torch
 import torch.optim as optim
 import torch.nn as nn
-from torch.utils.data import ConcatDataset, TensorDataset
+from torch.utils.data import ConcatDataset, TensorDataset, DataLoader
 
 from virtual_adversarial_training import VATLoss
 from data import DataloaderMerger
@@ -138,8 +138,10 @@ class Device(object):
     # update clients with new softlabel data
     if distill_phase == "clients":
       softlabels = torch.cat(softlabels)
+      batch_size = self.kwargs["batch_size"] - int(self.kwargs["local_data_percentage"]*self.kwargs["batch_size"])
+      distill_client_loader = DataLoader(TensorDataset(self.aux_data, softlabels.to('cpu')), batch_size=batch_size, shuffle=True)
       for client in clients:
-        client.set_combined_dataloader(softlabels=softlabels)
+        client.set_combined_dataloader(loader=distill_client_loader)
       return {"loss" : 1, "acc" : [eval_op(c.model, self.loaders)["accuracy"] for c in self.clients], "epochs" : 1}
 
     return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
@@ -148,18 +150,16 @@ class Client(Device):
   def __init__(self, model_fn, optimizer_fn, loader=None, aux_data=None, distill_loader=None, init=None, **kwargs):
     super().__init__(model_fn, optimizer_fn, loader, distill_loader, init)
     self.kwargs = kwargs
-    self.aux_data = aux_data.to('cpu') if aux_data is not None else None
       
-  def set_combined_dataloader(self, softlabels):
-    batch_size = self.kwargs["batch_size"] - int(self.kwargs["local_data_percentage"]*self.kwargs["batch_size"])
-    self.loaders['aux_loader'] = torch.utils.data.DataLoader(TensorDataset(self.aux_data, softlabels.to('cpu')), batch_size=batch_size, shuffle=True)
+  def set_combined_dataloader(self, loader):
+    self.loaders['aux_loader'] = loader
 
   def synchronize_with_server(self, server):
     self.model.load_state_dict(server.model.state_dict())
     #copy(target=self.W, source=server.W)
     
-  def compute_weight_update(self, epochs=1, loader=None):
-    train_stats = train_op(self.model, self.loaders if not loader else loader, self.optimizer, self.scheduler, epochs)
+  def compute_weight_update(self, epochs=1, loader=None, **kwargs):
+    train_stats = train_op(self.model, self.loaders if not loader else loader, self.optimizer, self.scheduler, epochs, **kwargs)
     return train_stats
 
   def predict(self, x):
@@ -190,7 +190,7 @@ class Client(Device):
     feature_bank, feature_labels = [], []
     with torch.no_grad():
         # generate feature bank
-        for data, target in self.loaders:
+        for data, target, source in self.loaders:
             feature = self.model.f(data.to(device)).squeeze() 
             #feature = feature / torch.norm(feature, dim=1).view(-1,1)
             feature_bank.append(feature)
@@ -256,9 +256,11 @@ class Client(Device):
    
  
 class Server(Device):
-  def __init__(self, model_fn, optimizer_fn, loader, distill_loader, init=None, clients=None):
+  def __init__(self, model_fn, optimizer_fn, loader, distill_loader, aux_data=None, init=None, clients=None, **kwargs):
     super().__init__(model_fn, optimizer_fn, loader, distill_loader, init)
     self.clients = clients
+    self.aux_data = aux_data
+    self.kwargs = kwargs
     
   def select_clients(self, clients, frac=1.0):
     return random.sample(clients, int(len(clients)*frac)) 
@@ -268,16 +270,25 @@ class Server(Device):
 
 
 
-def train_op(model, loaders, optimizer, scheduler, epochs):
+def train_op(model, loaders, optimizer, scheduler, epochs, **kwargs):
     model.train()  
     running_loss, samples = 0.0, 0
     for ep in range(epochs):
-      for x, y in loaders:
-        x, y = x.to(device), y.to(device)
+      for x, y, source in loaders:
+        x, y, source = x.to(device), y.to(device), source.to(device)
         
         optimizer.zero_grad()
 
-        loss = nn.BCEWithLogitsLoss()(model(x), y)
+        loss = nn.BCEWithLogitsLoss(reduction='none')(model(x), y)
+        local_loss = loss[source == 0]
+
+        local_loss = local_loss.mean()
+        distill_loss = 0
+        if len(source.nonzero()) < 1:
+          distill_loss = loss[source != 0].mean()
+
+        loss = local_loss + kwargs["distill_weight"] * warmup(kwargs["c_round"], kwargs["max_c_round"]) * distill_loss
+
         running_loss += loss.item()*y.shape[0]
         samples += y.shape[0]
 
@@ -287,14 +298,18 @@ def train_op(model, loaders, optimizer, scheduler, epochs):
 
     return {"loss" : running_loss / samples}
 
-
+def warmup(curr, max, type='constant'):
+  if type == 'constant':
+    return 1
+  elif type == 'tanh':
+    return np.tanh(curr/(0.5*max))
 
 def eval_op(model, loaders):
     model.train()
     samples, correct = 0, 0
 
     with torch.no_grad():
-      for x, y in loaders:
+      for x, y, source in loaders:
         x, y = x.to(device), y.to(device)
 
         y_ = model(x)

@@ -42,8 +42,8 @@ def run_experiment(xp, xp_count, n_experiments):
   distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=False)
 
 
-  clients = [Client(model_fn, optimizer_fn, loader, client_dataset=(client_data[i] if hp["distill_phase"] == "clients" else None), aux_data=distill_data_raw, **hp) for i, loader in enumerate(client_loaders)]
-  server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=0.001, weight_decay=5e-4), test_loader, distill_loader, clients=clients)
+  clients = [Client(model_fn, optimizer_fn, loader, client_dataset=(client_data[i] if hp["distill_phase"] == "clients" else None)) for i, loader in enumerate(client_loaders)]
+  server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=0.001, weight_decay=5e-4), test_loader, distill_loader, clients=clients, aux_data=distill_data_raw, **hp)
   #server.load_model(path=args.CHECKPOINT_PATH, name=hp["pretrained"])
 
   if hp["pretrained"]:
@@ -72,7 +72,7 @@ def run_experiment(xp, xp_count, n_experiments):
       client.synchronize_with_server(server)
       #client.generate_feature_bank() 
 
-      train_stats = client.compute_weight_update(hp["local_epochs"]) 
+      train_stats = client.compute_weight_update(hp["local_epochs"],c_round=c_round, max_c_round=hp["communication_rounds"], warmup_type=hp["warmup_type"], distill_weight=hp["distill_weight"])
 
     if hp["aggregation_mode"] in ["FA", "FAD"]:
       server.aggregate_weight_updates(participating_clients)

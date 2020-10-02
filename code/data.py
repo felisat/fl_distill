@@ -188,13 +188,16 @@ class DataloaderMerger(object):
 
   def __next__(self):
     try:
+      x,y,source = None, None, None
       if len(self.iters) > 1:
         x,y = zip(*(next(iterator) for iterator in self.iters))
+        source = torch.cat([i*torch.ones(subbatch.size(0)) for i,subbatch in enumerate(x)] )
         x = torch.cat(x)
         y = torch.cat(y)
       else:
         x,y = next(self.iters[0])
-      return x,y
+        source = torch.zeros(x.size(0))
+      return x,y, source
     except:
         raise StopIteration
 
