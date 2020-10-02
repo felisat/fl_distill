@@ -194,7 +194,6 @@ class DataloaderMerger(object):
         y = torch.cat(y)
       else:
         x,y = next(self.iters[0])
-      print(x.size())
       return x,y
     except:
         raise StopIteration

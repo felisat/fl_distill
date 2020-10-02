@@ -12,10 +12,10 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 class VGG(nn.Module):
 
-    def __init__(self, cfg, size=512, out=10):
+    def __init__(self, cfg, size=512, out=10, batch_norm=False):
         super(VGG, self).__init__()
 
-        self.features = self.make_layers(cfg)
+        self.features = self.make_layers(cfg, batch_norm=batch_norm)
         self.classifier = nn.Sequential(
             #nn.Dropout(),
             nn.Linear(size, size),
@@ -31,6 +31,9 @@ class VGG(nn.Module):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 m.weight.data.normal_(0, np.sqrt(2. / n))
                 m.bias.data.zero_()
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
         x = self.features(x)
@@ -55,6 +58,9 @@ class VGG(nn.Module):
 
 def vgg11s():
     return VGG([32, 'M', 64, 'M', 128, 128, 'M', 128, 128, 'M', 128, 128, 'M'], size=128)
+
+def vgg11sb():
+    return VGG([32, 'M', 64, 'M', 128, 128, 'M', 128, 128, 'M', 128, 128, 'M'], size=128, batch_norm=True)
   
 def vgg16():
     return VGG([64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'])
@@ -323,6 +329,7 @@ def get_model(model):
 
   return  { "vgg16" : (vgg16, optim.SGD, {"lr":0.04, "momentum":0.9, "weight_decay":5e-5}),
             "vgg11s" : (vgg11s, optim.SGD, {"lr":0.04, "momentum":0.9, "weight_decay":5e-5}),
+            "vgg11sb": (vgg11sb, optim.SGD, {"lr": 0.04, "momentum": 0.9, "weight_decay": 5e-5}),
               "lenet_cifar" : (lenet_cifar, optim.Adam, {"lr":0.001, "weight_decay":0.0}),
               "lenet_mnist" : (lenet_mnist, optim.Adam, {"lr":0.001, "weight_decay":0.0}),
               "mobilenetv2" : (mobilenetv2, optim.SGD, {"lr" : 0.01, "momentum" :0.9, "weight_decay" :5e-4}),
