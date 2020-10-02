@@ -22,13 +22,15 @@ hyperparameters=' [{
 
 	"communication_rounds" : [5],
 	"participation_rate" : [1],
-	"local_epochs" : [1],
-	"distill_epochs" : [1],
-	"n_distill" : [100], 
+	"local_epochs" : [2],
+	"distill_epochs" : [2],
+	"n_distill" : [100],
+	"warmup_type": ["tanh"],
 
 	
 	"batch_size" : [128],
 	"local_data_percentage" : [0.5],
+	"distill_weight": [1],
 	"aggregation_mode" : ["FD"],
 	"distill_mode" : ["regular"],
 	"distill_phase" : ["server","clients"],
