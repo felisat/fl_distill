@@ -1,5 +1,6 @@
 import torch, torchvision
 import numpy as np
+from itertools import cycle
 
 def get_mnist(path):
 
@@ -171,3 +172,31 @@ def print_split(idcs, labels):
 
   print(" - Total:      {}".format(np.stack(splits, axis=0).sum(axis=0)))
   print()
+
+class DataloaderMerger(object):
+  def __init__(self, loaders):
+    assert isinstance(loaders, dict), 'Please initialize the DataloaderMerger with a dict of names and dataloaders'
+    self.loaders = loaders
+
+  def __setitem__(self, key, value):
+    self.loaders[key] = value
+
+  def __iter__(self):
+    self.iters = [iter(loader) for loader in self.loaders.values()]
+    self.iters[1:] = [cycle(loader) for loader in self.iters[1:]]
+    return self
+
+  def __next__(self):
+    try:
+      if len(self.iters) > 1:
+        x,y = zip(*(next(iterator) for iterator in self.iters))
+        x = torch.cat(x)
+        y = torch.cat(y)
+      else:
+        x,y = next(self.iters[0])
+      print(x.size())
+      return x,y
+    except:
+        raise StopIteration
+
+

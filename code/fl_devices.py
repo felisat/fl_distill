@@ -7,6 +7,7 @@ import torch.nn as nn
 from torch.utils.data import ConcatDataset, TensorDataset
 
 from virtual_adversarial_training import VATLoss
+from data import DataloaderMerger
 
 import numpy as np
 
@@ -18,7 +19,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 class Device(object):
   def __init__(self, model_fn, optimizer_fn, loader, distill_loader, init=None):
     self.model = model_fn().to(device)
-    self.loader = loader
+    self.loaders = DataloaderMerger({'base_loader': loader})
     self.distill_loader = distill_loader
 
 
@@ -31,7 +32,7 @@ class Device(object):
     self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=1, gamma=0.96)  
     
   def evaluate(self, loader=None):
-    return eval_op(self.model, self.loader if not loader else loader)
+    return eval_op(self.model, self.loaders if not loader else loader)
 
   def save_model(self, path=None, name=None, verbose=True):
     if name:
@@ -126,7 +127,7 @@ class Device(object):
           softlabels.append(y)
 
       if distill_phase == "server":
-        acc_new = eval_op(self.model, self.loader)["accuracy"]
+        acc_new = eval_op(self.model, self.loaders)["accuracy"]
         print(acc_new)
 
         if acc_new < acc:
@@ -139,36 +140,26 @@ class Device(object):
       softlabels = torch.cat(softlabels)
       for client in clients:
         client.set_combined_dataloader(softlabels=softlabels)
-      return {"loss" : 1, "acc" : [eval_op(c.model, self.loader)["accuracy"] for c in self.clients], "epochs" : 1}
+      return {"loss" : 1, "acc" : [eval_op(c.model, self.loaders)["accuracy"] for c in self.clients], "epochs" : 1}
 
     return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
       
 class Client(Device):
-  def __init__(self, model_fn, optimizer_fn, loader=None, client_dataset=[], aux_data=[], distill_loader=None, init=None, **kwargs):
+  def __init__(self, model_fn, optimizer_fn, loader=None, aux_data=None, distill_loader=None, init=None, **kwargs):
     super().__init__(model_fn, optimizer_fn, loader, distill_loader, init)
     self.kwargs = kwargs
-
-    assert (loader or (client_dataset and aux_dataset)), "Either a data loader or a dataset must be provided"
-
-    if client_dataset is not None:
-      self.client_dataset = client_dataset
-      self.aux_data = aux_data.to('cpu')
-      self.set_combined_dataloader()
-      print("Initial size:", len(self.loader))
-
-
-  def set_combined_dataloader(self, softlabels=None):
-    self.loader = torch.utils.data.DataLoader(
-      ConcatDataset(
-        [self.client_dataset, TensorDataset(self.aux_data, softlabels.to('cpu'))]  if softlabels is not None else [self.client_dataset]
-      ), batch_size=self.kwargs["batch_size"], shuffle=True)
+    self.aux_data = aux_data.to('cpu') if aux_data is not None else None
+      
+  def set_combined_dataloader(self, softlabels):
+    batch_size = self.kwargs["batch_size"] - int(self.kwargs["local_data_percentage"]*self.kwargs["batch_size"])
+    self.loaders['aux_loader'] = torch.utils.data.DataLoader(TensorDataset(self.aux_data, softlabels.to('cpu')), batch_size=batch_size, shuffle=True)
 
   def synchronize_with_server(self, server):
     self.model.load_state_dict(server.model.state_dict())
     #copy(target=self.W, source=server.W)
     
   def compute_weight_update(self, epochs=1, loader=None):
-    train_stats = train_op(self.model, self.loader if not loader else loader, self.optimizer, self.scheduler, epochs)
+    train_stats = train_op(self.model, self.loaders if not loader else loader, self.optimizer, self.scheduler, epochs)
     return train_stats
 
   def predict(self, x):
@@ -199,7 +190,7 @@ class Client(Device):
     feature_bank, feature_labels = [], []
     with torch.no_grad():
         # generate feature bank
-        for data, target in self.loader:
+        for data, target in self.loaders:
             feature = self.model.f(data.to(device)).squeeze() 
             #feature = feature / torch.norm(feature, dim=1).view(-1,1)
             feature_bank.append(feature)
@@ -277,11 +268,11 @@ class Server(Device):
 
 
 
-def train_op(model, loader, optimizer, scheduler, epochs):
+def train_op(model, loaders, optimizer, scheduler, epochs):
     model.train()  
     running_loss, samples = 0.0, 0
     for ep in range(epochs):
-      for x, y in loader:   
+      for x, y in loaders:
         x, y = x.to(device), y.to(device)
         
         optimizer.zero_grad()
@@ -298,12 +289,12 @@ def train_op(model, loader, optimizer, scheduler, epochs):
 
 
 
-def eval_op(model, loader):
+def eval_op(model, loaders):
     model.train()
     samples, correct = 0, 0
 
     with torch.no_grad():
-      for i, (x, y) in enumerate(loader):
+      for x, y in loaders:
         x, y = x.to(device), y.to(device)
 
         y_ = model(x)

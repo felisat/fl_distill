@@ -38,7 +38,7 @@ def run_experiment(xp, xp_count, n_experiments):
   distill_data_raw = torch.stack([x for x,y in distill_data], dim=0)
 
   client_loaders, test_loader, client_data, test_data = data.get_loaders(train_data, test_data, n_clients=hp["n_clients"], 
-        classes_per_client=hp["classes_per_client"], batch_size=hp["batch_size"], n_data=None)
+        classes_per_client=hp["classes_per_client"], batch_size=int(hp["batch_size"]*hp["local_data_percentage"]) if hp["distill_phase"] == "clients" else hp["batch_size"], n_data=None)
   distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=False)
 
 

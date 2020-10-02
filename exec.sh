@@ -20,15 +20,16 @@ hyperparameters=' [{
 	"balancedness" : [1.0],
 
 
-	"communication_rounds" : [20],
-	"participation_rate" : [0.4],
-	"local_epochs" : [20],
-	"distill_epochs" : [10],
-	"n_distill" : [100000], 
+	"communication_rounds" : [5],
+	"participation_rate" : [1],
+	"local_epochs" : [1],
+	"distill_epochs" : [1],
+	"n_distill" : [100], 
 
 	
 	"batch_size" : [128],
-	"aggregation_mode" : ["FD", "FAD"],
+	"local_data_percentage" : [0.5],
+	"aggregation_mode" : ["FD"],
 	"distill_mode" : ["regular"],
 	"distill_phase" : ["server","clients"],
 	"only_linear" : [false],
@@ -64,6 +65,7 @@ else # Local
 	RESULTS_PATH="results/"
 	DATA_PATH="data/"
 	CHECKPOINT_PATH="checkpoints/"
+	echo "$hyperparameters"
 
 	python -u code/federated_learning.py --hp="$hyperparameters" --RESULTS_PATH="$RESULTS_PATH" --DATA_PATH="$DATA_PATH" --CHECKPOINT_PATH="$CHECKPOINT_PATH" $cmdargs
 
