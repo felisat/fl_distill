@@ -19,7 +19,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 class Device(object):
   def __init__(self, model_fn, optimizer_fn, loader, distill_loader, init=None):
     self.model = model_fn().to(device)
-    self.loaders = DataloaderMerger({'base_loader': loader})
+    self.loaders = DataloaderMerger({'base': loader})
     self.distill_loader = distill_loader
 
 
@@ -139,9 +139,10 @@ class Device(object):
     if distill_phase == "clients":
       softlabels = torch.cat(softlabels)
       batch_size = self.kwargs["batch_size"] - int(self.kwargs["local_data_percentage"]*self.kwargs["batch_size"])
-      distill_client_loader = DataLoader(TensorDataset(self.aux_data, softlabels.to('cpu')), batch_size=batch_size, shuffle=True)
-      for client in clients:
-        client.set_combined_dataloader(loader=distill_client_loader)
+      if batch_size > 0:
+        distill_client_loader = DataLoader(TensorDataset(self.aux_data, softlabels.to('cpu')), batch_size=batch_size, shuffle=True, pin_memory=True)
+        for client in clients:
+          client.set_combined_dataloader(loader=distill_client_loader)
       return {"loss" : 1, "acc" : [eval_op(c.model, self.loaders)["accuracy"] for c in self.clients], "epochs" : 1}
 
     return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}

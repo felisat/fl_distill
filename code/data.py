@@ -73,8 +73,8 @@ def get_loaders(train_data, test_data, n_clients=10, classes_per_client=0, batch
   subset_idcs = split_dirichlet(train_data.targets, n_clients, n_data, classes_per_client)
   client_data = [torch.utils.data.Subset(train_data, subset_idcs[i]) for i in range(n_clients)]
 
-  client_loaders = [torch.utils.data.DataLoader(subset, batch_size=batch_size, shuffle=True) for subset in client_data]
-  test_loader = torch.utils.data.DataLoader(test_data, batch_size=100)
+  client_loaders = [torch.utils.data.DataLoader(subset, batch_size=batch_size, shuffle=True, pin_memory=True) for subset in client_data]
+  test_loader = torch.utils.data.DataLoader(test_data, batch_size=100, pin_memory=True)
 
   return client_loaders, test_loader, client_data, test_data
 
@@ -175,15 +175,15 @@ def print_split(idcs, labels):
 
 class DataloaderMerger(object):
   def __init__(self, loaders):
-    assert isinstance(loaders, dict), 'Please initialize the DataloaderMerger with a dict of names and dataloaders'
+    assert isinstance(loaders, dict) and ('base' in loaders.keys()), 'Please initialize the DataloaderMerger with a dict of names and dataloaders and atleast one loader called "base"'
     self.loaders = loaders
 
   def __setitem__(self, key, value):
     self.loaders[key] = value
 
   def __iter__(self):
-    self.iters = [iter(loader) for loader in self.loaders.values()]
-    self.iters[1:] = [cycle(loader) for loader in self.iters[1:]]
+    self.iters = [iter(self.loaders['base'])]
+    self.iters += [cycle(iter(self.loaders[loader_name])) for loader_name in self.loaders.keys() if loader_name != 'base']
     return self
 
   def __next__(self):
