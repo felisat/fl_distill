@@ -139,10 +139,10 @@ class Device(object):
     if distill_phase == "clients":
       softlabels = torch.cat(softlabels)
       batch_size = self.kwargs["batch_size"] - int(self.kwargs["local_data_percentage"]*self.kwargs["batch_size"])
-      if batch_size > 0:
-        distill_client_loader = DataLoader(TensorDataset(self.aux_data, softlabels.to('cpu')), batch_size=batch_size, shuffle=True, pin_memory=True)
-        for client in clients:
-          client.set_combined_dataloader(loader=distill_client_loader)
+      distill_client_loader = DataLoader(TensorDataset(self.aux_data, softlabels.to('cpu')), batch_size=batch_size, shuffle=True)
+      for client in clients:
+        client.set_combined_dataloader(loader=distill_client_loader)
+        print(np.max([i for i,x in enumerate(client.loaders)]))
       return {"loss" : 1, "acc" : [eval_op(c.model, self.loaders)["accuracy"] for c in self.clients], "epochs" : 1}
 
     return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
@@ -150,6 +150,7 @@ class Device(object):
 class Client(Device):
   def __init__(self, model_fn, optimizer_fn, loader=None, aux_data=None, distill_loader=None, init=None, **kwargs):
     super().__init__(model_fn, optimizer_fn, loader, distill_loader, init)
+    print(np.max([i for i,x in enumerate(self.loaders)]))
     self.kwargs = kwargs
       
   def set_combined_dataloader(self, loader):
@@ -283,12 +284,13 @@ def train_op(model, loaders, optimizer, scheduler, epochs, **kwargs):
         loss = nn.BCEWithLogitsLoss(reduction='none')(model(x), y)
         local_loss = loss[source == 0]
 
-        local_loss = local_loss.mean()
+        local_loss = local_loss
         distill_loss = 0
         if len(source.nonzero()) < 1:
-          distill_loss = loss[source != 0].mean()
+          distill_loss = loss[source != 0]
 
         loss = local_loss + kwargs["distill_weight"] * warmup(kwargs["c_round"], kwargs["max_c_round"]) * distill_loss
+        loss = loss.mean()
 
         running_loss += loss.item()*y.shape[0]
         samples += y.shape[0]
