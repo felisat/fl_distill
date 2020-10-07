@@ -289,7 +289,7 @@ def train_op(model, loaders, optimizer, scheduler, epochs, **kwargs):
         if source.abs().sum() > 0:
           distill_loss = loss[source != 0].sum()
 
-        loss = local_loss + kwargs["distill_weight"] * warmup(kwargs["c_round"], kwargs["max_c_round"]) * distill_loss
+        loss = local_loss + kwargs["distill_weight"] * warmup(kwargs["c_round"], kwargs["max_c_round"], type=kwargs["warmup_type"]) * distill_loss
         loss = loss / x.size(0)
 
         running_loss += loss.item()*y.shape[0]
