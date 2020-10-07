@@ -15,15 +15,16 @@ hyperparameters=' [{
 	"net" : ["vgg11s"],
 	
 
-	"n_clients" : [20],
+	"n_clients" : [2],
 	"classes_per_client" : [0.1],
 	"balancedness" : [1.0],
 
-	"communication_rounds" : [3],
-	"participation_rate" : [0.4],
-	"local_epochs" : [5],
-	"distill_epochs" : [2],
-	"n_distill" : [100],
+
+	"communication_rounds" : [2],
+	"participation_rate" : [1],
+	"local_epochs" : [2],
+	"distill_epochs" : [10],
+	"n_distill" : [1000],
 	"warmup_type": ["constant"],
 
 	
