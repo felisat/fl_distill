@@ -287,7 +287,6 @@ def train_op(model, loaders, optimizer, scheduler, epochs, **kwargs):
         local_loss = local_loss.sum()
         distill_loss = 0
         if source.abs().sum() > 0:
-          print("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
           distill_loss = loss[source != 0].sum()
 
         loss = local_loss + kwargs["distill_weight"] * warmup(kwargs["c_round"], kwargs["max_c_round"]) * distill_loss
