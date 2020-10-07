@@ -284,13 +284,13 @@ def train_op(model, loaders, optimizer, scheduler, epochs, **kwargs):
         loss = nn.BCEWithLogitsLoss(reduction='none')(model(x), y)
         local_loss = loss[source == 0]
 
-        local_loss = local_loss
+        local_loss = local_loss.sum()
         distill_loss = 0
         if len(source.nonzero()) < 1:
-          distill_loss = loss[source != 0]
+          distill_loss = loss[source != 0].sum()
 
         loss = local_loss + kwargs["distill_weight"] * warmup(kwargs["c_round"], kwargs["max_c_round"]) * distill_loss
-        loss = loss.mean()
+        loss = loss / x.size(0)
 
         running_loss += loss.item()*y.shape[0]
         samples += y.shape[0]
