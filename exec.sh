@@ -19,18 +19,17 @@ hyperparameters=' [{
 	"classes_per_client" : [0.1],
 	"balancedness" : [1.0],
 
-	"communication_rounds" : [20],
-	"participation_rate" : [1],
-	"local_epochs" : [20],
+	"communication_rounds" : [3],
+	"participation_rate" : [0.4],
+	"local_epochs" : [5],
 	"distill_epochs" : [2],
 	"n_distill" : [100],
-	"warmup_type": ["tanh"],
+	"warmup_type": ["constant"],
 
 	
 	"batch_size" : [128],
-	"local_data_percentage" : [0.5],
+	"local_data_percentage" : [0.05],
 	"distill_weight": [1],
-
 	"aggregation_mode" : ["FD"],
 	"distill_mode" : ["regular"],
 	"distill_phase" : ["server","clients"],
