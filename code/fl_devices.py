@@ -90,6 +90,15 @@ class Client(Device):
     return t.detach()
 
 
+  def predict_random(self, x):
+    """Softmax prediction on input"""
+    adv = torch.zeros(size=[x.shape[0],10], device="cuda")
+    adv[:,0] = 1.0
+    #rand = torch.rand(size=[x.shape[0],10]).cuda()
+    #rand = rand / torch.sum(rand, axis=-1).reshape(-1,1)
+    return adv
+
+
   def generate_feature_bank(self):
     """Extracts Features of local data using local neural network"""
     feature_bank, feature_labels = [], []
@@ -234,7 +243,7 @@ class Server(Device):
     self.model.train()  
     #vat_loss = VATLoss(xi=10.0, eps=1.0, ip=1)
 
-    valid_modes = ["regular", "mean_logits", "weighted", "pate", "knn", "pate_up", "momentum", "count_weighted", "outlier_score"]
+    valid_modes = ["regular", "mean_logits", "weighted", "pate", "knn", "pate_up", "momentum", "count_weighted", "outlier_score", "adversaries"]
     assert mode in valid_modes, "mode has to be one of {}".format(valid_modes)
 
     # Use only clients who participated in the previous round for distilling except if momentum mode
@@ -274,6 +283,15 @@ class Server(Device):
           y = torch.zeros([x.shape[0], 10], device="cuda")
           for i, client in enumerate(clients):
             y_p = client.predict(x)
+            y += (y_p/len(clients)).detach()
+
+        if mode == "adversaries":
+          y = torch.zeros([x.shape[0], 10], device="cuda")
+          for i, client in enumerate(clients):
+            if client.is_adversary:
+              y_p = client.predict_random(x)
+            else:
+              y_p = client.predict(x)
             y += (y_p/len(clients)).detach()
 
 

@@ -10,34 +10,34 @@
 cmdargs=$1
 
 hyperparameters=' [{
-	"dataset" : ["mnist"], 
-	"distill_dataset" : ["emnist"],
+	"dataset" : ["cifar10"], 
+	"distill_dataset" : ["stl10"],
 	"net" : ["lenet_large"],
 	
 
 	"n_clients" : [20],
-	"classes_per_client" : [100.0, 10.0, 1.0, 0.1, 0.01],
+	"classes_per_client" : [100.0, 0.1, 0.01],
 	"balancedness" : [1.0],
 
 
-	"communication_rounds" : [20],
+	"communication_rounds" : [50],
 	"participation_rate" : [0.4],
 	"local_epochs" : [20],
-	"distill_epochs" : [100],
-	"n_distill" : [10000], 
+	"distill_epochs" : [5],
+	"n_distill" : [100000], 
 
 	
 	"batch_size" : [128],
-	"aggregation_mode" : ["FA", "FD"],
-	"distill_mode" : ["regular", "pate_up"],
+	"aggregation_mode" : ["FA", "FD", "FAD"],
+	"distill_mode" : ["regular", "outlier_score"],
 	"only_linear" : [false],
 	
 
-	"pretrained" : [null],
+	"pretrained" : ["simclr_lenet_stl10_10epochs.pth", null],
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["compare_communication_fa_fd/"],
+	"log_path" : ["experiment_large_cluster/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 

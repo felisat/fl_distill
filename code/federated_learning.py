@@ -50,21 +50,30 @@ def run_experiment(xp, xp_count, n_experiments):
 
   if hp["pretrained"]:
     for device in clients+[server]:
-      device.model.load_state_dict(torch.load(args.CHECKPOINT_PATH+hp["pretrained"][hp["distill_dataset"]], map_location='cpu'), strict=False)
-    print("Successfully loader model from", hp["pretrained"][hp["distill_dataset"]])
+      device.model.load_state_dict(torch.load(args.CHECKPOINT_PATH+hp["pretrained"], map_location='cpu'), strict=False)
+    print("Successfully loader model from", hp["pretrained"])
 
   if hp["only_linear"]:
     for device in [server]+clients:
       for param in device.model.f.parameters():
         param.requires_grad = False
 
+  if "n_adversaries" in hp:
+    for client in clients:
+      if client.id<hp["n_adversaries"]:
+        client.is_adversary = True
+      else:
+        client.is_adversary = False
 
-  feature_extractor = models.simclr_net_bn(pretrained_path=args.CHECKPOINT_PATH+"simclr_net_bn_stl10_80epochs.pth").cuda()
-  feature_extractor.eval()
-  for client in clients:
-    client.feature_extractor = feature_extractor
+
 
   if hp["distill_mode"] == "outlier_score":
+    feature_extractor = models.lenet_large().cuda()
+    feature_extractor.load_state_dict(torch.load(args.CHECKPOINT_PATH+"simclr_lenet_stl10_10epochs.pth", map_location='cpu'), strict=False)
+    feature_extractor.eval()
+    for client in clients:
+      client.feature_extractor = feature_extractor
+
     print("Train Outlier Detectors")
     for client in tqdm(clients):
       client.train_one_class_svm()
@@ -93,7 +102,7 @@ def run_experiment(xp, xp_count, n_experiments):
     
     if hp["aggregation_mode"] in ["FD", "FAD", "FknnD"]:
 
-      xp.log({"predictions" : np.stack([client.compute_prediction_matrix(distill_loader) for client in participating_clients])})
+      #xp.log({"predictions" : np.stack([client.compute_prediction_matrix(distill_loader) for client in participating_clients])})
 
       #hist = server.compute_prediction_histogram(participating_clients)
       #print(hist)

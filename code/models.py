@@ -32,6 +32,7 @@ class VGG(nn.Module):
                 m.weight.data.normal_(0, np.sqrt(2. / n))
                 m.bias.data.zero_()
 
+
     def forward(self, x):
         x = self.features(x)
         x = x.view(x.size(0), -1)
@@ -55,6 +56,9 @@ class VGG(nn.Module):
 
 def vgg11s():
     return VGG([32, 'M', 64, 'M', 128, 128, 'M', 128, 128, 'M', 128, 128, 'M'], size=128)
+
+def vgg11():
+    return VGG([64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'])
   
 def vgg16():
     return VGG([64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'])
@@ -177,14 +181,18 @@ class lenet_large(nn.Module):
         self.conv1 = nn.Conv2d(3, 20, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(20, 50, 5)
-        self.fc1 = nn.Linear(50 * 5 * 5, 500)
-        self.fc2 = nn.Linear(500, 10)
+        self.fc1 = nn.Linear(50 * 5 * 5, 512)
+        self.fc2 = nn.Linear(512, 10)
 
-    def forward(self, x):
+    def f(self, x):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
         x = x.view(-1, 50 * 5 * 5)
         x = F.relu(self.fc1(x))
+        return x
+
+    def forward(self, x):
+        x = self.f(x)
         x = self.fc2(x)
         return x
 
@@ -462,6 +470,7 @@ def get_model(model):
 
   return  { "vgg16" : (vgg16, optim.SGD, {"lr":0.04, "momentum":0.9, "weight_decay":5e-5}),
             "vgg11s" : (vgg11s, optim.SGD, {"lr":0.04, "momentum":0.9, "weight_decay":5e-5}),
+            "vgg11" : (vgg11, optim.SGD, {"lr":0.01, "momentum":0.9, "weight_decay":5e-5}),
               "lenet_cifar" : (lenet_cifar, optim.SGD, {"lr":0.01, "momentum" : 0.9, "weight_decay":0.0}),
                "lenet_large" : (lenet_large, optim.SGD, {"lr":0.01, "momentum" : 0.9, "weight_decay":0.0}),
               "lenet_mnist" : (lenet_mnist, optim.Adam, {"lr":0.001, "weight_decay":0.0}),
