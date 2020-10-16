@@ -34,7 +34,7 @@ def run_experiment(xp, xp_count, n_experiments):
   optimizer_fn = lambda x : optimizer(x, **{k : hp[k] if k in hp else v for k, v in optimizer_hp.items()}) 
   train_data, test_data = data.get_data(hp["dataset"], args.DATA_PATH)
   distill_data = data.get_data(hp["distill_dataset"], args.DATA_PATH)
-  distill_data = torch.utils.data.Subset(distill_data, np.random.permutation(len(distill_data))[:hp["n_distill"]])
+  distill_data = data.IdxSubset(distill_data, np.random.permutation(len(distill_data))[:hp["n_distill"]])
 
   client_loaders, test_loader, label_counts = data.get_loaders(train_data, test_data, n_clients=hp["n_clients"], 
         classes_per_client=hp["classes_per_client"], batch_size=hp["batch_size"], n_data=None)
@@ -68,15 +68,15 @@ def run_experiment(xp, xp_count, n_experiments):
 
 
   if hp["distill_mode"] == "outlier_score":
-    feature_extractor = models.lenet_large().cuda()
-    feature_extractor.load_state_dict(torch.load(args.CHECKPOINT_PATH+"simclr_lenet_stl10_10epochs.pth", map_location='cpu'), strict=False)
-    feature_extractor.eval()
-    for client in clients:
-      client.feature_extractor = feature_extractor
+    #feature_extractor = models.lenet_large().cuda()
+    #feature_extractor.load_state_dict(torch.load(args.CHECKPOINT_PATH+"simclr_lenet_stl10_10epochs.pth", map_location='cpu'), strict=False)
+    #feature_extractor.eval()
+    #for client in clients:
+    #  client.feature_extractor = feature_extractor
 
     print("Train Outlier Detectors")
     for client in tqdm(clients):
-      client.train_one_class_svm()
+      client.train_outlier_detector(hp["outlier_model"][0], distill_loader, **hp["outlier_model"][1])
 
   # print model
   models.print_model(server.model)

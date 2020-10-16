@@ -81,6 +81,8 @@ def get_loaders(train_data, test_data, n_clients=10, classes_per_client=0, batch
 
 def split_image_data(labels, n_clients, n_data, classes_per_client):
 
+  np.random.seed(0)
+
   if isinstance(labels, torch.Tensor):
     labels = labels.numpy()
   if not n_data: 
@@ -119,6 +121,9 @@ def split_image_data(labels, n_clients, n_data, classes_per_client):
 
 def split_dirichlet(labels, n_clients, n_data, alpha, double_stochstic=True):
     '''Splits data among the clients according to a dirichlet distribution with parameter alpha'''
+
+    np.random.seed(0)
+
     if isinstance(labels, torch.Tensor):
       labels = labels.numpy()
     n_classes = np.max(labels)+1
@@ -182,3 +187,18 @@ class AddChannels(object):
     self.n_channels = n_channels
   def __call__(self, x):
     return torch.cat([x]*self.n_channels, dim=0)
+
+
+
+class IdxSubset(torch.utils.data.Dataset):
+
+    def __init__(self, dataset, indices):
+        self.dataset = dataset
+        self.indices = indices
+
+    def __getitem__(self, idx):
+        return self.dataset[self.indices[idx]], idx
+
+    def __len__(self):
+        return len(self.indices)
+

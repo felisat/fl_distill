@@ -10,34 +10,36 @@
 cmdargs=$1
 
 hyperparameters=' [{
-	"dataset" : ["cifar10"], 
-	"distill_dataset" : ["stl10"],
-	"net" : ["lenet_large"],
+	"dataset" : ["mnist"], 
+	"distill_dataset" : ["emnist"],
+	"net" : ["lenet_cifar"],
 	
 
 	"n_clients" : [20],
-	"classes_per_client" : [100.0, 0.1, 0.01],
+	"classes_per_client" : [0.01],
 	"balancedness" : [1.0],
 
 
-	"communication_rounds" : [50],
-	"participation_rate" : [0.4],
+	"communication_rounds" : [3],
+	"participation_rate" : [1.0],
 	"local_epochs" : [20],
-	"distill_epochs" : [5],
+	"distill_epochs" : [10],
 	"n_distill" : [100000], 
 
 	
 	"batch_size" : [128],
-	"aggregation_mode" : ["FA", "FD", "FAD"],
-	"distill_mode" : ["regular", "outlier_score"],
+	"aggregation_mode" : ["FAD"],
+	"distill_mode" : ["outlier_score"],
+	"outlier_model" : [["ocsvm", {"gamma" : 0.25}], ["ocsvm", {"gamma" : 0.125}], ["ocsvm", {"gamma" : 0.0625}], ["ocsvm", {"gamma" : 0.03125}], ["ocsvm", {"gamma" : 0.015625}],
+						["ocsvm", {"gamma" : 0.0078125}], ["ocsvm", {"gamma" : 0.00390625}],["isolation_forest", {"kde" : 2}], ["kde", {"gamma" : 4}], ["kde", {"gamma" : 8}], ["kde", {"gamma" : 16}], ["kde", {"gamma" : 32}]],
 	"only_linear" : [false],
 	
 
-	"pretrained" : ["simclr_lenet_stl10_10epochs.pth", null],
+	"pretrained" : [null],
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["experiment_large_cluster/"],
+	"log_path" : ["outlier_models2/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
