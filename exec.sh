@@ -30,8 +30,7 @@ hyperparameters=' [{
 	"batch_size" : [128],
 	"aggregation_mode" : ["FAD"],
 	"distill_mode" : ["outlier_score"],
-	"outlier_model" : [["ocsvm", {"gamma" : 0.25}], ["ocsvm", {"gamma" : 0.125}], ["ocsvm", {"gamma" : 0.0625}], ["ocsvm", {"gamma" : 0.03125}], ["ocsvm", {"gamma" : 0.015625}],
-						["ocsvm", {"gamma" : 0.0078125}], ["ocsvm", {"gamma" : 0.00390625}],["isolation_forest", {"kde" : 2}], ["kde", {"gamma" : 4}], ["kde", {"gamma" : 8}], ["kde", {"gamma" : 16}], ["kde", {"gamma" : 32}]],
+	"outlier_model" : [["kde", {"bandwidth" : 4}], ["kde", {"bandwidth" : 8}], ["kde", {"bandwidth" : 16}], ["kde", {"bandwidth" : 32}]],
 	"only_linear" : [false],
 	
 
