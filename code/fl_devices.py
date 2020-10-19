@@ -224,12 +224,14 @@ class Client(Device):
 
     if model=="ocsvm":
       self.outlier_model = OneClassSVM(**kw_args).fit(X_train_)
+      self.outlier_model.score = lambda x : self.outlier_model.score_samples(x)
     
     elif model=="isolation_forest":
       self.outlier_model = IsolationForest(**kw_args).fit(X_train_)
 
     elif model=="kde":
       self.outlier_model = KernelDensity(**kw_args).fit(X_train_)
+      self.outlier_model.score = lambda x : np.exp(self.outlier_model.score_samples(x))
 
     elif model=="autoencoder":
       self.outlier_model = MLPRegressor(hidden_layer_sizes = (200, 100, 50, 100, 200), 
@@ -240,7 +242,7 @@ class Client(Device):
                    verbose = False,
                    **kwargs).fit(X_train_, X_train_)
 
-    scores = self.outlier_model.score_samples(X_distill_)
+    scores = self.outlier_model.score(X_distill_)
 
     norm_scores = (scores-np.min(scores))/(np.max(scores)-np.min(scores))
     #norm_scores = sigmoid((scores - np.mean(scores))/np.std(scores))
