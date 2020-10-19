@@ -108,7 +108,7 @@ def run_experiment(xp, xp_count, n_experiments):
       #print(hist)
       #exit()
 
-      distill_stats = server.distill(clients, hp["distill_epochs"], mode=hp["distill_mode"])
+      distill_stats = server.distill(clients, hp["distill_epochs"], mode=hp["distill_mode"] if c_round<2 else "regular")
       xp.log({"distill_{}".format(key) : value for key, value in distill_stats.items()})
 
 

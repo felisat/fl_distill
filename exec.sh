@@ -16,11 +16,11 @@ hyperparameters=' [{
 	
 
 	"n_clients" : [20],
-	"classes_per_client" : [0.01],
+	"classes_per_client" : [0.01, 100.0],
 	"balancedness" : [1.0],
 
 
-	"communication_rounds" : [10],
+	"communication_rounds" : [50],
 	"participation_rate" : [1.0],
 	"local_epochs" : [20],
 	"distill_epochs" : [10],
@@ -28,10 +28,9 @@ hyperparameters=' [{
 
 	
 	"batch_size" : [128],
-	"aggregation_mode" : ["FAD"],
-	"distill_mode" : ["outlier_score"],
-	"outlier_model" : [["ocsvm", {"gamma" : 0.25}], ["ocsvm", {"gamma" : 0.125}], ["ocsvm", {"gamma" : 0.0625}], ["ocsvm", {"gamma" : 0.03125}], ["ocsvm", {"gamma" : 0.015625}],
-						["ocsvm", {"gamma" : 0.0078125}], ["ocsvm", {"gamma" : 0.00390625}], ["isolation_forest", {}]],
+	"aggregation_mode" : ["FA", "FD", "FAD"],
+	"distill_mode" : ["outlier_score", "regular"],
+	"outlier_model" : [["ocsvm", {"gamma": 0.03125}]],
 	"only_linear" : [false],
 	
 
@@ -39,7 +38,7 @@ hyperparameters=' [{
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["outlier_models2/"],
+	"log_path" : ["compare_all_mnist/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
