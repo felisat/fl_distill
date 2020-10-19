@@ -12,6 +12,6 @@ ssh -o "StrictHostKeyChecking no" fsattler@vca-gpu-211-01 << EOF
 	git pull
 	head -n 50 exec.sh
 	echo "Running $max experiments..."
-
+	echo "$max $step"
 	bash run_multiple.sh "$max $step"
 EOF
