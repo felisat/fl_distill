@@ -244,6 +244,9 @@ class Client(Device):
 
     scores = self.outlier_model.score(X_distill_)
 
+
+    
+
     norm_scores = (scores-np.min(scores))/(np.max(scores)-np.min(scores))
     #norm_scores = sigmoid((scores - np.mean(scores))/np.std(scores))
     #self.outlier_model.pca = pca
