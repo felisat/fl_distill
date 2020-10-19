@@ -15,6 +15,7 @@ ssh -o "StrictHostKeyChecking no" fsattler@vca-gpu-211-01 << EOF
 
 	for (( c=0; c<$max; c+=$step ))
 	do
-	   sbatch exec.sh "--start $c --end $(($c+$step))"
+	   echo sbatch exec.sh "--start $c --end $(($c+$step))"
+	   #sbatch exec.sh "--start $c --end $(($c+$step))"
 	done
 EOF
