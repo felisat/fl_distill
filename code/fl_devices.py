@@ -361,7 +361,7 @@ def train_op(model, loaders, optimizer, scheduler, epochs, **kwargs):
 
             optimizer.zero_grad()
 
-            loss = nn.BCEWithLogitsLoss(reduction="none")(model(x), y)
+            loss = nn.KLDivLoss(reduction="none")(model(x), y)
             local_loss = loss[source == 0]
 
             local_loss = local_loss.sum()
