@@ -211,6 +211,7 @@ class Client(Device):
 
     if self.feature_extractor is not None:
       X_train = torch.cat([self.feature_extractor.f(x[0][:,:].cuda()).detach().cpu() for x in self.loader], dim=0).reshape(-1,512).numpy()
+      X_distill = torch.cat([self.feature_extractor.f(x[0][0][:,0].cuda()).detach().cpu() for x in distill_loader], dim=0).reshape(-1,512).numpy()
     else:
       X_train = torch.cat([x[0][:,0] for x in self.loader], dim=0).reshape(-1,1*32*32).numpy()
       X_distill = torch.cat([x[0][0][:,0] for x in distill_loader], dim=0).reshape(-1,1*32*32).numpy()
@@ -245,7 +246,7 @@ class Client(Device):
     scores = self.outlier_model.score(X_distill_)
 
 
-    
+
 
     norm_scores = (scores-np.min(scores))/(np.max(scores)-np.min(scores))
     #norm_scores = sigmoid((scores - np.mean(scores))/np.std(scores))
@@ -351,16 +352,22 @@ class Server(Device):
 
           y = nn.Softmax(1)(y)
 
-        if mode == "weighted":
+
+        if mode == "weighted_logits":
           y = torch.zeros([x.shape[0], 10], device="cuda")
           w = torch.zeros([x.shape[0], 1], device="cuda")
           for i, client in enumerate(clients):
-            y_p = client.predict(x)
-            weight = client.predict_knn_weight(x).view(-1,1)
+            y_p = client.predict_logit(x)
+            weight = client.predict_outlier_score(idx).reshape(-1,1).cuda()
+
+            #print(client.label_counts)
+            #for i,j in zip(_,weight):
+            #  print(i, j)
+            #exit()
 
             y += (y_p*weight).detach()
             w += weight.detach()
-          y = y / w
+          y = nn.Softmax(1)(y / w)
 
 
         if mode == "outlier_score":
