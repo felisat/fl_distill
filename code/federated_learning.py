@@ -125,17 +125,17 @@ def run_experiment(xp, xp_count, n_experiments):
                 warmup_type=hp["warmup_type"],
                 distill_weight=hp["distill_weight"],
             )
-            #train_stats_clients.append(train_stats)
+            train_stats_clients.append(train_stats)
 
         # log client epoch and minibatch loss
-        #xp.log(
-        #    {
-        #        f"train_local_loss": torch.stack(
-        #            [stat["detailed_loss"] for stat in train_stats_clients]
-        #        )
-        #    },
-        #    printout=False,
-        #)
+        xp.log(
+            {
+                f"train_local_loss": torch.stack(
+                    [stat["detailed_loss"] for stat in train_stats_clients]
+                )
+            },
+            printout=False,
+        )
 
         if hp["aggregation_mode"] in ["FA", "FAD"]:
             server.aggregate_weight_updates(participating_clients)

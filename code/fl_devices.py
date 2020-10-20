@@ -380,17 +380,17 @@ def train_op(model, loaders, optimizer, scheduler, epochs, **kwargs):
             )
             loss = loss / x.size(0)
 
-            #minibatch_loss.append(loss.unsqueeze(dim=0).detach())
+            minibatch_loss.append(loss.unsqueeze(dim=0).detach())
 
             running_loss += loss.item() * y.shape[0]
             samples += y.shape[0]
 
             loss.backward()
             optimizer.step()
-        #epoch_loss.append(torch.cat(minibatch_loss))
+        epoch_loss.append(torch.cat(minibatch_loss))
         # scheduler.step()
 
-    return {"loss": running_loss / samples} #, "detailed_loss": torch.stack(epoch_loss)}
+    return {"loss": running_loss / samples, "detailed_loss": torch.stack(epoch_loss)}
 
 
 def warmup(curr, max, type="constant"):
