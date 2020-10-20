@@ -8,6 +8,7 @@ import experiment_manager as xpm
 from fl_devices import Client, Server
 
 torch.autograd.set_detect_anomaly(True)
+#torch.set_num_threads(1)
 
 
 np.set_printoptions(precision=4, suppress=True)
@@ -124,16 +125,17 @@ def run_experiment(xp, xp_count, n_experiments):
                 warmup_type=hp["warmup_type"],
                 distill_weight=hp["distill_weight"],
             )
-            train_stats_clients.append(train_stats)
+            #train_stats_clients.append(train_stats)
 
         # log client epoch and minibatch loss
-        xp.log(
-            {
-                f"train_local_loss": torch.stack(
-                    [stat["detailed_loss"] for stat in train_stats_clients]
-                )
-            }
-        )
+        #xp.log(
+        #    {
+        #        f"train_local_loss": torch.stack(
+        #            [stat["detailed_loss"] for stat in train_stats_clients]
+        #        )
+        #    },
+        #    printout=False,
+        #)
 
         if hp["aggregation_mode"] in ["FA", "FAD"]:
             server.aggregate_weight_updates(participating_clients)

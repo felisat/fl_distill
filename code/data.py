@@ -121,12 +121,12 @@ def get_loaders(
 
     client_loaders = [
         torch.utils.data.DataLoader(
-            subset, batch_size=batch_size, shuffle=True, pin_memory=True
+            subset, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=20
         )
         for subset in client_data
     ]
     test_loader = torch.utils.data.DataLoader(
-        test_data, batch_size=100, pin_memory=True
+        test_data, batch_size=100, pin_memory=True, num_workers=20
     )
 
     return client_loaders, test_loader, client_data, test_data
@@ -255,9 +255,19 @@ class DataloaderMerger(object):
         self.loaders[key] = value
 
     def __iter__(self):
+        def loop(iterable):
+            it = iterable.__iter__()
+
+            while True:
+                try:
+                    yield it.next()
+                except StopIteration:
+                    it = iterable.__iter__()
+                    yield it.next()
+
         self.iters = [iter(self.loaders["base"])]
         self.iters += [
-            cycle(iter(self.loaders[loader_name]))
+            loop(iter(self.loaders[loader_name]))
             for loader_name in self.loaders.keys()
             if loader_name != "base"
         ]

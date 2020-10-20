@@ -15,21 +15,21 @@ hyperparameters=' [{
 	"net" : ["vgg11s"],
 	
 
-	"n_clients" : [2],
+	"n_clients" : [10],
 	"classes_per_client" : [0.1],
 	"balancedness" : [1.0],
 
 
-	"communication_rounds" : [2],
-	"participation_rate" : [1],
-	"local_epochs" : [2],
+	"communication_rounds" : [5],
+	"participation_rate" : [1.0],
+	"local_epochs" : [10],
 	"distill_epochs" : [10],
-	"n_distill" : [1000],
-	"warmup_type": ["constant"],
+	"n_distill" : [10000],
+	"warmup_type": ["tanh"],
 
-	
-	"batch_size" : [128],
-	"local_data_percentage" : [0.05],
+
+	"batch_size" : [512],
+	"local_data_percentage" : [0.25],
 	"distill_weight": [1],
 	"aggregation_mode" : ["FD"],
 	"distill_mode" : ["regular"],
@@ -69,7 +69,7 @@ else # Local
 	CHECKPOINT_PATH="checkpoints/"
 	echo "$hyperparameters"
 
-	python -u code/federated_learning.py --hp="$hyperparameters" --RESULTS_PATH="$RESULTS_PATH" --DATA_PATH="$DATA_PATH" --CHECKPOINT_PATH="$CHECKPOINT_PATH" $cmdargs
+	python3 -u code/federated_learning.py --hp="$hyperparameters" --RESULTS_PATH="$RESULTS_PATH" --DATA_PATH="$DATA_PATH" --CHECKPOINT_PATH="$CHECKPOINT_PATH" $cmdargs
 
 
 

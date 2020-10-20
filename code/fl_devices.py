@@ -177,6 +177,7 @@ class Device(object):
                     batch_size=batch_size,
                     shuffle=True,
                     pin_memory=True,
+                    num_workers=20
                 )
                 for client in clients:
                     client.set_combined_dataloader(loader=distill_client_loader)
@@ -361,7 +362,7 @@ def train_op(model, loaders, optimizer, scheduler, epochs, **kwargs):
 
             optimizer.zero_grad()
 
-            loss = nn.KLDivLoss(reduction="none")(model(x), y)
+            loss = nn.BCELoss(reduction="none")(model(x), y)
             local_loss = loss[source == 0]
 
             local_loss = local_loss.sum()
@@ -379,17 +380,17 @@ def train_op(model, loaders, optimizer, scheduler, epochs, **kwargs):
             )
             loss = loss / x.size(0)
 
-            minibatch_loss.append(loss.unsqueeze(dim=0))
+            #minibatch_loss.append(loss.unsqueeze(dim=0).detach())
 
             running_loss += loss.item() * y.shape[0]
             samples += y.shape[0]
 
             loss.backward()
             optimizer.step()
-        epoch_loss.append(torch.cat(minibatch_loss))
+        #epoch_loss.append(torch.cat(minibatch_loss))
         # scheduler.step()
 
-    return {"loss": running_loss / samples, "detailed_loss": torch.stack(epoch_loss)}
+    return {"loss": running_loss / samples} #, "detailed_loss": torch.stack(epoch_loss)}
 
 
 def warmup(curr, max, type="constant"):
