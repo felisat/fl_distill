@@ -140,9 +140,7 @@ class Device(object):
                             .mean()
                         )
 
-                    loss = kulbach_leibler_divergence(
-                        y_, y
-                    )  # torch.mean(torch.sum(y_*(y_.log()-y.log()), dim=1))
+                    loss = kulbach_leibler_divergence(y_, y)
 
                     running_loss += loss.item() * y.shape[0]
                     samples += y.shape[0]
@@ -177,7 +175,6 @@ class Device(object):
                     batch_size=batch_size,
                     shuffle=True,
                     pin_memory=True,
-                    num_workers=20
                 )
                 for client in clients:
                     client.set_combined_dataloader(loader=distill_client_loader)
@@ -204,7 +201,6 @@ class Client(Device):
         **kwargs
     ):
         super().__init__(model_fn, optimizer_fn, loader, distill_loader, init)
-        print(np.max([i for i, x in enumerate(self.loaders)]))
         self.kwargs = kwargs
 
     def set_combined_dataloader(self, loader):
@@ -346,8 +342,22 @@ class Server(Device):
     def select_clients(self, clients, frac=1.0):
         return random.sample(clients, int(len(clients) * frac))
 
-    def aggregate_weight_updates(self, clients):
-        reduce_average(target=self.W, sources=[client.W for client in clients])
+    def aggregate_weight_updates(self, clients, distill_phase="server", aggregation_mode='FD'):
+        server_weights = [self.W]
+        client_weights = [client.W for client in clients]
+
+        if distill_phase == 'clients' and aggregation_mode in ["FA", "FAD"]:
+            targets = server_weights
+        else:
+            targets = server_weights
+
+        reduce_average(
+            targets=targets,
+            sources=client_weights,
+        )
+
+        if distill_phase == 'clients':
+            print(f"Averaged model accuracy: {eval_op(self.model, self.loaders)['accuracy']}")
 
 
 def train_op(model, loaders, optimizer, scheduler, epochs, **kwargs):
@@ -380,17 +390,19 @@ def train_op(model, loaders, optimizer, scheduler, epochs, **kwargs):
             )
             loss = loss / x.size(0)
 
-            minibatch_loss.append(loss.unsqueeze(dim=0).detach())
+            # minibatch_loss.append(loss.unsqueeze(dim=0).detach().to('cpu'))
 
             running_loss += loss.item() * y.shape[0]
             samples += y.shape[0]
 
             loss.backward()
             optimizer.step()
-        epoch_loss.append(torch.cat(minibatch_loss))
+        # epoch_loss.append(torch.cat(minibatch_loss))
         # scheduler.step()
 
-    return {"loss": running_loss / samples, "detailed_loss": torch.stack(epoch_loss)}
+    return {
+        "loss": running_loss / samples
+    }  # , "detailed_loss": torch.stack(epoch_loss)}
 
 
 def warmup(curr, max, type="constant"):
@@ -426,11 +438,12 @@ def copy(target, source):
         target[name].data = source[name].detach().clone()
 
 
-def reduce_average(target, sources):
-    for name in target:
-        target[name].data = torch.mean(
-            torch.stack([source[name].detach() for source in sources]), dim=0
-        ).clone()
+def reduce_average(targets, sources):
+    for target in targets:
+        for name in target:
+            target[name].data = torch.mean(
+                torch.stack([source[name].detach() for source in sources]), dim=0
+            ).clone()
 
 
 def subtract_(target, minuend, subtrahend):

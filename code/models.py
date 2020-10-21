@@ -24,7 +24,7 @@ class VGG(nn.Module):
             nn.Linear(size, size),
             nn.ReLU(True),
             nn.Linear(size, out),
-            nn.Softmax(dim=0)
+            nn.Softmax(1)
         )
         # Initialize weights
         for m in self.modules():

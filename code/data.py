@@ -121,12 +121,12 @@ def get_loaders(
 
     client_loaders = [
         torch.utils.data.DataLoader(
-            subset, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=20
+            subset, batch_size=batch_size, shuffle=True, pin_memory=True
         )
         for subset in client_data
     ]
     test_loader = torch.utils.data.DataLoader(
-        test_data, batch_size=100, pin_memory=True, num_workers=20
+        test_data, batch_size=100, pin_memory=True
     )
 
     return client_loaders, test_loader, client_data, test_data
