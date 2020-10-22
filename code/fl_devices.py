@@ -198,7 +198,7 @@ class Client(Device):
         aux_data=None,
         distill_loader=None,
         init=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(model_fn, optimizer_fn, loader, distill_loader, init)
         self.kwargs = kwargs
@@ -217,7 +217,7 @@ class Client(Device):
             self.optimizer,
             self.scheduler,
             epochs,
-            **kwargs
+            **kwargs,
         )
         return train_stats
 
@@ -332,7 +332,7 @@ class Server(Device):
         aux_data=None,
         init=None,
         clients=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(model_fn, optimizer_fn, loader, distill_loader, init)
         self.clients = clients
@@ -342,11 +342,13 @@ class Server(Device):
     def select_clients(self, clients, frac=1.0):
         return random.sample(clients, int(len(clients) * frac))
 
-    def aggregate_weight_updates(self, clients, distill_phase="server", aggregation_mode='FD'):
+    def aggregate_weight_updates(
+        self, clients, distill_phase="server", aggregation_mode="FD"
+    ):
         server_weights = [self.W]
         client_weights = [client.W for client in clients]
 
-        if distill_phase == 'clients' and aggregation_mode in ["FA", "FAD"]:
+        if distill_phase == "clients" and aggregation_mode in ["FA", "FAD"]:
             targets = server_weights
         else:
             targets = server_weights
@@ -356,8 +358,10 @@ class Server(Device):
             sources=client_weights,
         )
 
-        if distill_phase == 'clients':
-            print(f"Averaged model accuracy: {eval_op(self.model, self.loaders)['accuracy']}")
+        if distill_phase == "clients":
+            print(
+                f"Averaged model accuracy: {eval_op(self.model, self.loaders)['accuracy']}"
+            )
 
 
 def train_op(model, loaders, optimizer, scheduler, epochs, **kwargs):

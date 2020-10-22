@@ -7,11 +7,11 @@ import data, models
 import experiment_manager as xpm
 from fl_devices import Client, Server
 
-#import torch.multiprocessing
-#torch.multiprocessing.set_sharing_strategy('file_system')
+# import torch.multiprocessing
+# torch.multiprocessing.set_sharing_strategy('file_system')
 
 torch.autograd.set_detect_anomaly(True)
-#torch.set_num_threads(1)
+# torch.set_num_threads(1)
 
 
 np.set_printoptions(precision=4, suppress=True)
@@ -128,21 +128,25 @@ def run_experiment(xp, xp_count, n_experiments):
                 warmup_type=hp["warmup_type"],
                 distill_weight=hp["distill_weight"],
             )
-            #train_stats_clients.append(train_stats)
+            # train_stats_clients.append(train_stats)
 
         # log client epoch and minibatch loss
-        #xp.log(
+        # xp.log(
         #    {
         #        f"train_local_loss": torch.stack(
         #            [stat["detailed_loss"] for stat in train_stats_clients]
         #        )
         #    },
         #    printout=False,
-        #)
+        # )
 
         # use FA or if normal client distillation aggregate on server
-        if hp["aggregation_mode"] in ["FA", "FAD"] or hp["distill_phase"] == 'clients':
-            server.aggregate_weight_updates(participating_clients, distill_phase=hp["distill_phase"], aggregation_mode=hp["aggregation_mode"])
+        if hp["aggregation_mode"] in ["FA", "FAD"] or hp["distill_phase"] == "clients":
+            server.aggregate_weight_updates(
+                participating_clients,
+                distill_phase=hp["distill_phase"],
+                aggregation_mode=hp["aggregation_mode"],
+            )
 
         if hp["aggregation_mode"] in ["FD", "FAD", "FknnD"]:
 
