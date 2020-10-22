@@ -6,27 +6,27 @@ import itertools as it
 import matplotlib.pyplot as plt
 
 
-
 def save_results(results_dict, path, name, verbose=True):
-    results_numpy = {key : np.array(value)for key, value in results_dict.items()}
+    results_numpy = {key: np.array(value) for key, value in results_dict.items()}
 
     if not os.path.exists(path):
         os.makedirs(path)
-    np.savez(path+name, **results_numpy) 
+    np.savez(path + name, **results_numpy)
     if verbose:
-        print("Saved results to ", path+name+".npz")
+        print("Saved results to ", path + name + ".npz")
 
 
 def load_results(path, filename, verbose=True):
-    results_dict = np.load(path+filename, allow_pickle=True)
+    results_dict = np.load(path + filename, allow_pickle=True)
 
     if verbose:
-        print("Loaded results from "+path+filename)
+        print("Loaded results from " + path + filename)
     return results_dict
 
 
-class Experiment():
-    '''Class that contains logic to store hyperparameters und results of an experiment'''
+class Experiment:
+    """Class that contains logic to store hyperparameters und results of an experiment"""
+
     hyperparameters = {}
     results = {}
     parameters = {}
@@ -39,27 +39,21 @@ class Experiment():
             self.hyperparameters_ = {}
             self.results = {}
             self.parameters = {}
-            self.hyperparameters['finished'] = False
-            self.hyperparameters['log_id'] = np.random.randint(100000)
-
-
-
+            self.hyperparameters["finished"] = False
+            self.hyperparameters["log_id"] = np.random.randint(100000)
 
     def __str__(self):
         selfname = "Hyperparameters: \n"
         for key, value in self.hyperparameters.items():
-            selfname += " - "+key+" "*(24-len(key))+str(value)+"\n"
+            selfname += " - " + key + " " * (24 - len(key)) + str(value) + "\n"
         return selfname
 
     def __repr__(self):
         return self.__str__()
 
-
-
-
     def log(self, update_dict, printout=True, override=False):
         # update a result
-        for key, value in update_dict.items(): 
+        for key, value in update_dict.items():
             if (not key in self.results) or override:
                 self.results[key] = [value]
             else:
@@ -68,62 +62,71 @@ class Experiment():
         if printout:
             print(update_dict)
 
-
     def is_log_round(self, c_round):
-        log_freq = self.hyperparameters['log_frequency']
+        log_freq = self.hyperparameters["log_frequency"]
         if log_freq < 0:
-            log_freq = np.ceil(self.hyperparameters['communication_rounds']/(-log_freq)).astype('int') 
-        if c_round == self.hyperparameters['communication_rounds']:
-            self.hyperparameters['finished'] = True
+            log_freq = np.ceil(
+                self.hyperparameters["communication_rounds"] / (-log_freq)
+            ).astype("int")
+        if c_round == self.hyperparameters["communication_rounds"]:
+            self.hyperparameters["finished"] = True
 
-        return (c_round == 1) or (c_round % log_freq == 0) or (c_round == self.hyperparameters['communication_rounds'])
+        return (
+            (c_round == 1)
+            or (c_round % log_freq == 0)
+            or (c_round == self.hyperparameters["communication_rounds"])
+        )
 
     def save_parameters(self, parameters):
         self.parameters = parameters
 
     def to_dict(self):
         # turns an experiment into a dict that can be saved to disc
-        return {'hyperparameters' : self.hyperparameters, 'hyperparameters_' : self.hyperparameters_,
-                    'parameters' : self.parameters, **self.results}
+        return {
+            "hyperparameters": self.hyperparameters,
+            "hyperparameters_": self.hyperparameters_,
+            "parameters": self.parameters,
+            **self.results,
+        }
 
     def from_dict(self, hp_dict):
         # takes a dict and turns it into an experiment
         self.results = dict(hp_dict)
 
-        self.hyperparameters = hp_dict['hyperparameters'][np.newaxis][0]
+        self.hyperparameters = hp_dict["hyperparameters"][np.newaxis][0]
 
-        if 'parameters' in hp_dict:
-            self.parameters = hp_dict['parameters'][np.newaxis][0]
-            del self.results['parameters']
+        if "parameters" in hp_dict:
+            self.parameters = hp_dict["parameters"][np.newaxis][0]
+            del self.results["parameters"]
         else:
             self.parameters = {}
-        
-        if 'hyperparameters_' in hp_dict:
-            self.hyperparameters_ = hp_dict['hyperparameters_'][np.newaxis][0]
-            del self.results['hyperparameters_']
+
+        if "hyperparameters_" in hp_dict:
+            self.hyperparameters_ = hp_dict["hyperparameters_"][np.newaxis][0]
+            del self.results["hyperparameters_"]
         else:
             self.hyperparameters_ = {}
 
-                
     def save_to_disc(self, path, name):
         if path:
-            save_results(self.to_dict(), path+name, 'xp_'+str(self.hyperparameters['log_id']))
-
+            save_results(
+                self.to_dict(), path + name, "xp_" + str(self.hyperparameters["log_id"])
+            )
 
 
 def get_all_hp_combinations(hp):
-    '''Turns a dict of lists into a list of dicts'''
+    """Turns a dict of lists into a list of dicts"""
     combinations = it.product(*(hp[name] for name in hp))
-    hp_dicts = [{key : value[i] for i,key in enumerate(hp)}for value in combinations]
+    hp_dicts = [{key: value[i] for i, key in enumerate(hp)} for value in combinations]
     return hp_dicts
 
 
 def list_of_dicts_to_dict(hp_dicts):
-    '''Turns a list of dicts into one dict of lists containing all individual values'''
+    """Turns a list of dicts into one dict of lists containing all individual values"""
     one_dict = {}
     for hp in hp_dicts:
         for key, value in hp.items():
-            if not key in one_dict: 
+            if not key in one_dict:
                 one_dict[key] = [value]
             elif value not in one_dict[key]:
                 one_dict[key] += [value]
@@ -131,18 +134,24 @@ def list_of_dicts_to_dict(hp_dicts):
 
 
 def get_list_of_experiments(path, only_finished=False, verbose=True):
-    '''Returns all the results saved at location path'''
+    """Returns all the results saved at location path"""
     list_of_experiments = []
 
     os.chdir(path)
     for file in glob.glob("*.npz"):
-        list_of_experiments += [Experiment(hp_dict=load_results(path+"/",file, verbose=False))]
+        list_of_experiments += [
+            Experiment(hp_dict=load_results(path + "/", file, verbose=False))
+        ]
 
     if only_finished:
-        list_of_experiments = [xp for xp in list_of_experiments if 'finished' in xp.hyperparameters and xp.hyperparameters['finished']]
+        list_of_experiments = [
+            xp
+            for xp in list_of_experiments
+            if "finished" in xp.hyperparameters and xp.hyperparameters["finished"]
+        ]
 
     if list_of_experiments and verbose:
-        print("Loaded ",len(list_of_experiments), " Results from ", path)
+        print("Loaded ", len(list_of_experiments), " Results from ", path)
         print()
         get_experiments_metadata(list_of_experiments)
 
@@ -153,11 +162,13 @@ def get_list_of_experiments(path, only_finished=False, verbose=True):
 
 
 def get_experiment(path, name, verbose=False):
-    '''Returns one result saved at location path'''
-    experiment = Experiment(hp_dict=load_results(path+"/",name+".npz", verbose=False))
+    """Returns one result saved at location path"""
+    experiment = Experiment(
+        hp_dict=load_results(path + "/", name + ".npz", verbose=False)
+    )
 
     if verbose:
-        print("Loaded ",1, " Result from ", path)
+        print("Loaded ", 1, " Result from ", path)
         print()
         get_experiments_metadata([experiment])
 
@@ -165,11 +176,8 @@ def get_experiment(path, name, verbose=False):
 
 
 def get_experiments_metadata(list_of_experiments):
-    hp_dicts =  [experiment.hyperparameters for experiment in list_of_experiments]
+    hp_dicts = [experiment.hyperparameters for experiment in list_of_experiments]
 
-    print('Hyperparameters: \n' ,list_of_dicts_to_dict(hp_dicts))
+    print("Hyperparameters: \n", list_of_dicts_to_dict(hp_dicts))
     print()
-    print('Tracked Variables: \n', list(list_of_experiments[0].results.keys()))
-
-
-
+    print("Tracked Variables: \n", list(list_of_experiments[0].results.keys()))
