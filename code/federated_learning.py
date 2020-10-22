@@ -10,7 +10,7 @@ from fl_devices import Client, Server
 #import torch.multiprocessing
 #torch.multiprocessing.set_sharing_strategy('file_system')
 
-#torch.autograd.set_detect_anomaly(True)
+torch.autograd.set_detect_anomaly(True)
 #torch.set_num_threads(1)
 
 
