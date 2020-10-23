@@ -12,9 +12,6 @@ from functools import partial
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-def ResNet8():
-    return ResNet(BasicBlock, [1,1,1,1], num_classes=10)
-
 class VGG(nn.Module):
 
     def __init__(self, cfg, size=512, out=10):
@@ -239,13 +236,16 @@ def apply_gn(model):
             setattr(model, n, torch.nn.GroupNorm(num_groups=4, num_channels=c.num_features))  
 
 
+def resnet8():
+    return ResNet(BasicBlock, [1,1,1,1], num_classes=10)
+
 
 class Model(nn.Module):
     def __init__(self, feature_dim=128, group_norm=False):
         super(Model, self).__init__()
 
         self.f = []
-        for name, module in resnet18().named_children():
+        for name, module in resnet8().named_children():
             if name == 'conv1':
                 module = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
             if not isinstance(module, nn.Linear) and not isinstance(module, nn.MaxPool2d):
@@ -266,14 +266,16 @@ class Model(nn.Module):
         return F.normalize(feature, dim=-1), F.normalize(out, dim=-1)
 
 
-class simclr_net_bn(nn.Module):
-    def __init__(self, num_class=10, pretrained_path=None, group_norm=False):
-        super(simclr_net_bn, self).__init__()
+class resnet8_bn(nn.Module):
+    def __init__(self, num_class=10, z_dim=32, pretrained_path=None, group_norm=False):
+        super(resnet8_bn, self).__init__()
 
         # encoder
         self.f = Model(group_norm=group_norm).f
         # classifier
         self.fc = nn.Linear(512, num_class, bias=True)
+
+
         if pretrained_path:
             self.load_state_dict(torch.load(pretrained_path, map_location='cpu'), strict=False)
 
@@ -284,9 +286,10 @@ class simclr_net_bn(nn.Module):
         return out
 
 
-class simclr_net_gn(nn.Module):
+
+class resnet8_gn(nn.Module):
     def __init__(self, num_class=10, pretrained_path=None, group_norm=True):
-        super(simclr_net_gn, self).__init__()
+        super(resnet8_gn, self).__init__()
 
         # encoder
         self.f = Model(group_norm=group_norm).f
@@ -369,6 +372,26 @@ class outlier_net(nn.Module):
 
 
 
+class Autoencoder(nn.Module):
+    def __init__(self):
+        super(Autoencoder, self).__init__()
+        
+        self.f = nn.Sequential(nn.Linear(512, 128, bias=True), 
+                                nn.LeakyReLU(inplace=True), 
+                                nn.Linear(128, 32, bias=True),
+                                nn.LeakyReLU(inplace=True),
+                               nn.Linear(32, 128, bias=True),
+                                nn.LeakyReLU(inplace=True),
+                               nn.Linear(128, 512, bias=True))  
+        
+    def forward(self, x):
+        return self.f(x)
+    
+    def get_ae_loss(self, x):
+        x_ae = self.f(x)  
+
+        return torch.sum((x_ae - x) ** 2, dim=1)
+
 
 
 
@@ -386,9 +409,8 @@ def get_model(model):
               "mobilenetv2s" : (mobilenetv2s, optim.SGD, {"lr" : 0.01, "momentum" :0.9, "weight_decay" :5e-4}),
               "mobilenetv2xs" : (mobilenetv2xs, optim.SGD, {"lr" : 0.01, "momentum" :0.9, "weight_decay" :5e-4}),
               "mobilenetv2_gn" : (mobilenetv2_gn, optim.SGD, {"lr" : 0.01, "momentum" :0.9, "weight_decay" :5e-4}),
-              "simclr_net_gn" : (simclr_net_gn, optim.SGD, {"lr" : 0.1, "momentum" : 0.9, "weight_decay" :5e-4}),
-                "simclr_net_bn" : (simclr_net_bn, optim.SGD, {"lr" : 0.1, "momentum" : 0.9, "weight_decay" :5e-4}),
-                "resnet8" : (ResNet8, optim.SGD, {"lr" : 0.1, "momentum" : 0.9, "weight_decay" :5e-4}),
+              "resnet8_gn" : (resnet8_gn, optim.SGD, {"lr" : 0.1, "momentum" : 0.9, "weight_decay" :5e-4}),
+                "resnet8_bn" : (resnet8_bn, optim.SGD, {"lr" : 0.1, "momentum" : 0.0, "weight_decay" : 5e-4}),
                     "simclr_vgg11" : (simclrVGG11, optim.Adam, {"lr" : 0.001, "weight_decay" :5e-4})
           }[model]
 

@@ -34,6 +34,7 @@ def run_experiment(xp, xp_count, n_experiments):
   optimizer_fn = lambda x : optimizer(x, **{k : hp[k] if k in hp else v for k, v in optimizer_hp.items()}) 
   train_data, test_data = data.get_data(hp["dataset"], args.DATA_PATH)
   distill_data = data.get_data(hp["distill_dataset"], args.DATA_PATH)
+  np.random.seed(0)
   distill_data = data.IdxSubset(distill_data, np.random.permutation(len(distill_data))[:hp["n_distill"]])
 
   client_loaders, test_loader, label_counts = data.get_loaders(train_data, test_data, n_clients=hp["n_clients"], 
@@ -41,22 +42,23 @@ def run_experiment(xp, xp_count, n_experiments):
   distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=False)
 
   clients = [Client(model_fn, optimizer_fn, loader, idnum=i) for i, loader in enumerate(client_loaders)]
-  server = Server(model_fn, lambda x : torch.optim.SGD(x, lr=0.01, momentum=0.9), test_loader, distill_loader)
+  server = Server(model_fn, lambda x : torch.optim.SGD(x, lr=0.1, momentum=0.9), test_loader, distill_loader)
   #server.load_model(path=args.CHECKPOINT_PATH, name=hp["pretrained"])
   #server.model.load_state_dict(torch.load("/home/sattler/Workspace/PyTorch/fl_distill/checkpoints/simclr_net_bn_stl10_80epochs.pth", map_location='cpu'), strict=False)
 
   for client, counts in zip(clients, label_counts):
     client.label_counts = counts
 
-  if hp["pretrained"]:
+  if hp["aggregation_mode"] in ["FAD+P", "FedAUX"]:
+  #if hp["pretrained"]:
     for device in clients+[server]:
       device.model.load_state_dict(torch.load(args.CHECKPOINT_PATH+hp["pretrained"], map_location='cpu'), strict=False)
     print("Successfully loader model from", hp["pretrained"])
 
-  if hp["only_linear"]:
+  """  if hp["only_linear"]:
     for device in [server]+clients:
       for param in device.model.f.parameters():
-        param.requires_grad = False
+        param.requires_grad = False"""
 
   if "n_adversaries" in hp:
     for client in clients:
@@ -67,12 +69,12 @@ def run_experiment(xp, xp_count, n_experiments):
 
 
 
-  if hp["distill_mode"] == "outlier_score":
-    #feature_extractor = models.lenet_large().cuda()
-    #feature_extractor.load_state_dict(torch.load(args.CHECKPOINT_PATH+"simclr_lenet_stl10_10epochs.pth", map_location='cpu'), strict=False)
-    #feature_extractor.eval()
-    #for client in clients:
-    #  client.feature_extractor = feature_extractor
+  if hp["aggregation_mode"] in ["FAD+S", "FedAUX"]:
+    feature_extractor = model_fn().cuda()
+    feature_extractor.load_state_dict(torch.load(args.CHECKPOINT_PATH+hp["pretrained"], map_location='cpu'), strict=False)
+    feature_extractor.eval()
+    for client in clients:
+      client.feature_extractor = feature_extractor
 
     print("Train Outlier Detectors")
     for client in tqdm(clients):
@@ -96,11 +98,14 @@ def run_experiment(xp, xp_count, n_experiments):
       #client.generate_feature_bank() 
 
       train_stats = client.compute_weight_update(hp["local_epochs"]) 
+      print(train_stats)
 
-    if hp["aggregation_mode"] in ["FA", "FAD"]:
+    if hp["aggregation_mode"] in ["FA", "FAD", "FAD+P", "FAD+S", "FedAUX"]:
       server.aggregate_weight_updates(participating_clients)
+
+      print(server.evaluate())
     
-    if hp["aggregation_mode"] in ["FD", "FAD", "FknnD"]:
+    if hp["aggregation_mode"] in ["FD", "FAD", "FAD+P", "FAD+S", "FedAUX"]:
 
       #xp.log({"predictions" : np.stack([client.compute_prediction_matrix(distill_loader) for client in participating_clients])})
 
@@ -108,7 +113,8 @@ def run_experiment(xp, xp_count, n_experiments):
       #print(hist)
       #exit()
 
-      distill_stats = server.distill(clients, hp["distill_epochs"], mode=hp["distill_mode"])
+      distll_mode = "outlier_score" if hp["aggregation_mode"] in ["FAD+S", "FedAUX"] else "mean_logits"
+      distill_stats = server.distill(clients, hp["distill_epochs"], mode=distll_mode)
       xp.log({"distill_{}".format(key) : value for key, value in distill_stats.items()})
 
 

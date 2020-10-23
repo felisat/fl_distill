@@ -50,7 +50,10 @@ class Client(Device):
     self.feature_extractor = None
     
   def synchronize_with_server(self, server, c_round):
-    self.model.load_state_dict(server.model.state_dict())
+    server_state = server.model.state_dict()
+    reduced_server_state = {k : v for k,v in server_state.items() if "oc" not in k}
+
+    self.model.load_state_dict(reduced_server_state, strict=False)
     self.c_round = c_round
     #copy(target=self.W, source=server.W)
     
@@ -169,39 +172,9 @@ class Client(Device):
     return torch.cat(predictions, dim=0).detach().cpu().numpy()
 
 
-  def train_outlier_detector(self):
-    self.outlier_model = outlier_net().cuda()
-    optimizer = torch.optim.Adam(self.outlier_model.parameters(), lr=0.001, weight_decay=1e-6)
-
-    x = iter(self.loader).next()[0].cuda()
-    self.outlier_c = torch.mean(self.outlier_model(x), dim=0).detach()
-
-    n_epochs = 100
-    for epoch in range(n_epochs+1):
-        train_loss = 0.0
-        for x, _ in self.loader:
-            x = x.cuda()
-            optimizer.zero_grad()
-            r = self.outlier_model(x)
-            loss = torch.mean((r -self.outlier_c)**2)
-            loss.backward()
-            optimizer.step()
-            train_loss += loss.item()*x.size(0)
-                
-        train_loss = train_loss/len(self.loader)
-    print('Epoch: {} \tTraining Loss: {}'.format(epoch, train_loss))
-    self.mean_outlier_loss = train_loss
 
 
-  def predict_outlier_score(self, x):
-    with torch.no_grad():
-      r = self.outlier_model(x)
-      loss = torch.mean((r - self.outlier_c)**2, dim=-1)
-
-    return loss.detach()/self.mean_outlier_loss
-
-
-  def train_outlier_detector(self, model, distill_loader, **kw_args):
+  def train_outlier_detector(self, model, distill_loader, pretrained=True, **kw_args):
     from sklearn.decomposition import PCA
     from sklearn.svm import OneClassSVM
     from sklearn.ensemble import IsolationForest
@@ -209,42 +182,48 @@ class Client(Device):
     from  sklearn.neighbors import KernelDensity
 
 
-    if self.feature_extractor is not None:
-      X_train = torch.cat([self.feature_extractor.f(x[0][:,:].cuda()).detach().cpu() for x in self.loader], dim=0).reshape(-1,512).numpy()
-      X_distill = torch.cat([self.feature_extractor.f(x[0][0][:,0].cuda()).detach().cpu() for x in distill_loader], dim=0).reshape(-1,512).numpy()
+    if not pretrained:
+      if self.feature_extractor is not None:
+        X_train = torch.cat([self.feature_extractor.f(x[0].cuda()).detach().cpu() for x in self.loader], dim=0).reshape(-1,512).numpy()
+        X_distill = torch.cat([self.feature_extractor.f(x[0][0].cuda()).detach().cpu() for x in distill_loader], dim=0).reshape(-1,512).numpy()
+      else:
+        X_train = torch.cat([x[0] for x in self.loader], dim=0).reshape(-1,1*32*32).numpy()
+        X_distill = torch.cat([x[0][0] for x in distill_loader], dim=0).reshape(-1,1*32*32).numpy()
+
+      pca = PCA(n_components=0.95, svd_solver="full", whiten=True)
+      pca.fit(X_train)
+      X_train_ = pca.transform(X_train)
+      X_distill_ = pca.transform(X_distill)
+
+
+
+      if model=="ocsvm":
+        self.outlier_model = OneClassSVM(**kw_args).fit(X_train_)
+        self.outlier_model.score = lambda x : self.outlier_model.score_samples(x)
+      
+      elif model=="isolation_forest":
+        self.outlier_model = IsolationForest(**kw_args).fit(X_train_)
+
+      elif model=="kde":
+        self.outlier_model = KernelDensity(**kw_args).fit(X_train_)
+        self.outlier_model.score = lambda x : np.exp(self.outlier_model.score_samples(x))
+
+      elif model=="autoencoder":
+        self.outlier_model = MLPRegressor(hidden_layer_sizes = (200, 100, 50, 100, 200), 
+                     activation = 'relu', 
+                     solver = 'adam', 
+                     learning_rate_init = 0.0001, 
+                     max_iter = 100, 
+                     verbose = False,
+                     **kwargs).fit(X_train_, X_train_)
+
+      scores = self.outlier_model.score(X_distill_)
+
+
+      np.save("client_{}_scores.npy".format(self.id), scores)
+
     else:
-      X_train = torch.cat([x[0][:,0] for x in self.loader], dim=0).reshape(-1,1*32*32).numpy()
-      X_distill = torch.cat([x[0][0][:,0] for x in distill_loader], dim=0).reshape(-1,1*32*32).numpy()
-
-    pca = PCA(n_components=0.95, svd_solver="full", whiten=True)
-    pca.fit(X_train)
-    X_train_ = pca.transform(X_train)
-    X_distill_ = pca.transform(X_distill)
-
-
-
-    if model=="ocsvm":
-      self.outlier_model = OneClassSVM(**kw_args).fit(X_train_)
-      self.outlier_model.score = lambda x : self.outlier_model.score_samples(x)
-    
-    elif model=="isolation_forest":
-      self.outlier_model = IsolationForest(**kw_args).fit(X_train_)
-
-    elif model=="kde":
-      self.outlier_model = KernelDensity(**kw_args).fit(X_train_)
-      self.outlier_model.score = lambda x : np.exp(self.outlier_model.score_samples(x))
-
-    elif model=="autoencoder":
-      self.outlier_model = MLPRegressor(hidden_layer_sizes = (200, 100, 50, 100, 200), 
-                   activation = 'relu', 
-                   solver = 'adam', 
-                   learning_rate_init = 0.0001, 
-                   max_iter = 100, 
-                   verbose = False,
-                   **kwargs).fit(X_train_, X_train_)
-
-    scores = self.outlier_model.score(X_distill_)
-
+      scores = np.load("scores/client_{}_scores.npy".format(self.id))
 
 
 
@@ -289,10 +268,11 @@ class Server(Device):
 
   def distill(self, clients, epochs=1, mode="regular"):
     print("Distilling...")
+    self.optimizer = self.optimizer_fn(self.model.parameters())   
     self.model.train()  
     #vat_loss = VATLoss(xi=10.0, eps=1.0, ip=1)
 
-    valid_modes = ["regular", "mean_logits", "weighted", "pate", "knn", "pate_up", "momentum", "count_weighted", "outlier_score", "adversaries"]
+    valid_modes = ["regular", "mean_logits", "weighted_logits", "weighted", "pate", "knn", "pate_up", "momentum", "count_weighted", "outlier_score", "adversaries", "deep_outlier_score"]
     assert mode in valid_modes, "mode has to be one of {}".format(valid_modes)
 
     # Use only clients who participated in the previous round for distilling except if momentum mode
@@ -305,6 +285,7 @@ class Server(Device):
       running_loss, samples = 0.0, 0
       for (x, _), idx in tqdm(self.distill_loader):   
         x = x.to(device)
+
 
         if mode == "momentum":
           y = torch.zeros([x.shape[0], 10], device="cuda")
@@ -334,6 +315,19 @@ class Server(Device):
             y_p = client.predict(x)
             y += (y_p/len(clients)).detach()
 
+
+        if mode == "outlier_score":
+          y = torch.zeros([x.shape[0], 10], device="cuda")
+          w = torch.zeros([x.shape[0], 1], device="cuda")
+          for i, client in enumerate(clients):
+            y_p = client.predict(x)
+            weight = client.predict_outlier_score(idx).reshape(-1,1).cuda()
+
+            y += (y_p*weight).detach()
+            w += weight.detach()
+          y = y / w
+
+
         if mode == "adversaries":
           y = torch.zeros([x.shape[0], 10], device="cuda")
           for i, client in enumerate(clients):
@@ -360,31 +354,9 @@ class Server(Device):
             y_p = client.predict_logit(x)
             weight = client.predict_outlier_score(idx).reshape(-1,1).cuda()
 
-            #print(client.label_counts)
-            #for i,j in zip(_,weight):
-            #  print(i, j)
-            #exit()
-
             y += (y_p*weight).detach()
             w += weight.detach()
           y = nn.Softmax(1)(y / w)
-
-
-        if mode == "outlier_score":
-          y = torch.zeros([x.shape[0], 10], device="cuda")
-          w = torch.zeros([x.shape[0], 1], device="cuda")
-          for i, client in enumerate(clients):
-            y_p = client.predict(x)
-            weight = client.predict_outlier_score(idx).reshape(-1,1).cuda()
-
-            #print(client.label_counts)
-            #for i,j in zip(_,weight):
-            #  print(i, j)
-            #exit()
-
-            y += (y_p*weight).detach()
-            w += weight.detach()
-          y = y / w
 
 
         if mode == "pate":
@@ -436,11 +408,14 @@ class Server(Device):
 
       acc_new = eval_op(self.model, self.loader)["accuracy"]
       print(acc_new)
+      if acc_new < 0.11:
+        self.aggregate_weight_updates(clients)
+        mode = "mean_logits"
 
-      if acc_new < acc:
-        return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
-      else:
-        acc = acc_new
+      #if acc_new < acc:
+      #  return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
+      #else:
+      #  acc = acc_new
 
     return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
 
@@ -464,6 +439,33 @@ def train_op(model, loader, optimizer, scheduler, epochs):
       #scheduler.step()
 
     return {"loss" : running_loss / samples}
+
+
+
+def train_with_oc_op(model, loader, optimizer, scheduler, epochs):
+    model.train()  
+    running_loss, running_oc_loss, samples = 0.0, 0.0, 0
+    for ep in range(epochs):
+      for x, y in loader:   
+        x, y = x.to(device), y.to(device)
+        
+        optimizer.zero_grad()
+
+        classification_loss = nn.CrossEntropyLoss()(model(x), y)
+
+        oc_loss = torch.mean(model.predict_outlier_score(x))
+
+        loss = classification_loss + oc_loss
+
+        running_loss += loss.item()*y.shape[0]
+        running_oc_loss += oc_loss.item()*y.shape[0]
+        samples += y.shape[0]
+
+        loss.backward()
+        optimizer.step()  
+      #scheduler.step()
+
+    return {"loss" : running_loss / samples, "oc_loss" : running_oc_loss / samples}
 
 
 
