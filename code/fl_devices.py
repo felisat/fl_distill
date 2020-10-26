@@ -374,12 +374,13 @@ class Server(Device):
         y_ = nn.Softmax(1)(self.model(x))
 
         def kulbach_leibler_divergence(predicted, target):
-          return -(target * torch.log(predicted.clamp_min(1e-7))).sum(dim=-1).mean() - \
-                 -1*(target.clamp(min=1e-7) * torch.log(target.clamp(min=1e-7))).sum(dim=-1).mean()
+          return -(target * torch.log(predicted.clamp_min(1e-7))).sum(dim=-1).mean() 
+          #+ 1*(target.clamp(min=1e-7) * torch.log(target.clamp(min=1e-7))).sum(dim=-1).mean()
 
-        loss = kulbach_leibler_divergence(y_,y)#torch.mean(torch.sum(y_*(y_.log()-y.log()), dim=1))
 
- 
+
+        loss = kulbach_leibler_divergence(y_,y.detach())#torch.mean(torch.sum(y_*(y_.log()-y.log()), dim=1))
+
         running_loss += loss.item()*y.shape[0]
         samples += y.shape[0]
 
@@ -392,8 +393,8 @@ class Server(Device):
       acc_new = eval_op(self.model, self.loader)["accuracy"]
       print(acc_new)
       if acc_new < 0.11:
+        print("AHHHHHHH")
         self.aggregate_weight_updates(clients)
-        mode = "mean_logits"
 
       #if acc_new < acc:
       #  return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}

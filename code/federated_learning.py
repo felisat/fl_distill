@@ -39,7 +39,7 @@ def run_experiment(xp, xp_count, n_experiments):
 
   client_loaders, test_loader, label_counts = data.get_loaders(train_data, test_data, n_clients=hp["n_clients"], 
         classes_per_client=hp["classes_per_client"], batch_size=hp["batch_size"], n_data=None)
-  distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=True)
+  distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=False)
 
   clients = [Client(model_fn, optimizer_fn, loader, idnum=i) for i, loader in enumerate(client_loaders)]
   server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=2e-3), test_loader, distill_loader)
