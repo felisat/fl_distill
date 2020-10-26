@@ -16,19 +16,19 @@ hyperparameters=' [{
 	
 
 	"n_clients" : [20],
-	"classes_per_client" : [0.01, 100.0],
+	"classes_per_client" : [100.0],
 	"balancedness" : [1.0],
 
 
 	"communication_rounds" : [50],
 	"participation_rate" : [0.4],
 	"local_epochs" : [20],
-	"distill_epochs" : [10],
+	"distill_epochs" : [1],
 	"n_distill" : [100000], 
 
 	
 	"batch_size" : [128],
-	"aggregation_mode" : ["FA", "FD", "FAD", "FAD+P"],
+	"aggregation_mode" : ["FAD", "FAD+P"],
 	"outlier_model" : [["ocsvm", {"gamma" : 0.03125}]],
 	
 
@@ -36,7 +36,7 @@ hyperparameters=' [{
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["exp_comp_modes/"],
+	"log_path" : ["one_distill_epoch/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 

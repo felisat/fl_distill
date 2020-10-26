@@ -39,10 +39,10 @@ def run_experiment(xp, xp_count, n_experiments):
 
   client_loaders, test_loader, label_counts = data.get_loaders(train_data, test_data, n_clients=hp["n_clients"], 
         classes_per_client=hp["classes_per_client"], batch_size=hp["batch_size"], n_data=None)
-  distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=False)
+  distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=True)
 
   clients = [Client(model_fn, optimizer_fn, loader, idnum=i) for i, loader in enumerate(client_loaders)]
-  server = Server(model_fn, lambda x : torch.optim.SGD(x, lr=0.1, momentum=0.9), test_loader, distill_loader)
+  server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=2e-3), test_loader, distill_loader)
   #server.load_model(path=args.CHECKPOINT_PATH, name=hp["pretrained"])
   #server.model.load_state_dict(torch.load("/home/sattler/Workspace/PyTorch/fl_distill/checkpoints/simclr_net_bn_stl10_80epochs.pth", map_location='cpu'), strict=False)
 
@@ -113,8 +113,8 @@ def run_experiment(xp, xp_count, n_experiments):
       #print(hist)
       #exit()
 
-      distll_mode = "outlier_score" if hp["aggregation_mode"] in ["FAD+S", "FedAUX"] else "mean_logits"
-      distill_stats = server.distill(clients, hp["distill_epochs"], mode=distll_mode)
+      distll_mode = "outlier_score" if hp["aggregation_mode"] in ["FAD+S", "FedAUX"] else "regular"
+      distill_stats = server.distill(participating_clients, hp["distill_epochs"], mode=distll_mode)
       xp.log({"distill_{}".format(key) : value for key, value in distill_stats.items()})
 
 

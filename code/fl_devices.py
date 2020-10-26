@@ -50,10 +50,7 @@ class Client(Device):
     self.feature_extractor = None
     
   def synchronize_with_server(self, server, c_round):
-    server_state = server.model.state_dict()
-    reduced_server_state = {k : v for k,v in server_state.items() if "oc" not in k}
-
-    self.model.load_state_dict(reduced_server_state, strict=False)
+    self.model.load_state_dict(server.model.state_dict(), strict=False)
     self.c_round = c_round
     #copy(target=self.W, source=server.W)
     
@@ -65,7 +62,7 @@ class Client(Device):
 
   def predict(self, x):
     """Softmax prediction on input"""
-    self.model.eval()
+    self.model.train()
     with torch.no_grad():
       y_ = nn.Softmax(1)(self.model(x))
 
@@ -73,16 +70,16 @@ class Client(Device):
 
   def predict_logit(self, x):
     """Softmax prediction on input"""
-    self.model.eval()
+    self.model.train()
     with torch.no_grad():
       y_ = self.model(x)
 
     return y_
 
 
-  def predict_(self, x):
+  def predict_max(self, x):
     """Argmax prediction on input"""
-    self.model.eval()
+    self.model.train()
     with torch.no_grad():
       y_ = nn.Softmax(1)(self.model(x))
       
@@ -272,13 +269,9 @@ class Server(Device):
     self.model.train()  
     #vat_loss = VATLoss(xi=10.0, eps=1.0, ip=1)
 
-    valid_modes = ["regular", "mean_logits", "weighted_logits", "weighted", "pate", "knn", "pate_up", "momentum", "count_weighted", "outlier_score", "adversaries", "deep_outlier_score"]
+    valid_modes = ["regular", "mean_logits", "weighted_logits", "weighted", "pate", "knn", "pate_up", "count_weighted", "outlier_score", "adversaries", "deep_outlier_score"]
     assert mode in valid_modes, "mode has to be one of {}".format(valid_modes)
 
-    # Use only clients who participated in the previous round for distilling except if momentum mode
-    c_max = max([client.c_round for client in clients])
-    if mode not in ["momentum"]: 
-      clients = [c for c in clients if c.c_round==c_max] 
 
     acc = 0
     for ep in range(epochs):
@@ -287,17 +280,7 @@ class Server(Device):
         x = x.to(device)
 
 
-        if mode == "momentum":
-          y = torch.zeros([x.shape[0], 10], device="cuda")
-          w = 0
-          
-          for i, client in enumerate(clients):
-            if client.c_round > 0:
-              y_p = client.predict(x)
-              y += 0.8**(c_max - client.c_round)*y_p.detach()
-              w += 0.8**(c_max - client.c_round)
-          y = y / w
-
+  
         if mode == "count_weighted":
           y = torch.zeros([x.shape[0], 10], device="cuda")
           for i, client in enumerate(clients):
@@ -360,7 +343,7 @@ class Server(Device):
 
 
         if mode == "pate":
-          hist = torch.sum(torch.stack([client.predict_(x) for client in clients]), dim=0)
+          hist = torch.sum(torch.stack([client.predict_max(x) for client in clients]), dim=0)
           #hist += torch.randn_like(hist)
 
           amax = torch.argmax(hist, dim=1)
@@ -370,7 +353,7 @@ class Server(Device):
 
 
         if mode == "pate_up":
-          y = torch.mean(torch.stack([client.predict_(x) for client in clients]), dim=0)
+          y = torch.mean(torch.stack([client.predict_max(x) for client in clients]), dim=0)
 
 
         if mode in "knn":
