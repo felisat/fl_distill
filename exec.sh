@@ -28,7 +28,7 @@ hyperparameters=' [{
 
 	
 	"batch_size" : [128],
-	"aggregation_mode" : ["FAD", "FAD+P"],
+	"aggregation_mode" : ["FAD+S", "FedAUX"],
 	"outlier_model" : [["ocsvm", {"gamma" : 0.03125}]],
 	
 
