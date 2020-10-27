@@ -23,12 +23,12 @@ hyperparameters=' [{
 	"communication_rounds" : [50],
 	"participation_rate" : [0.4],
 	"local_epochs" : [20],
-	"distill_epochs" : [1],
+	"distill_epochs" : [3],
 	"n_distill" : [100000], 
 
 	
 	"batch_size" : [128],
-	"aggregation_mode" : ["FA", "FD", "FAD", "FAD+P", "FAD+S", "FedAUX"],
+	"aggregation_mode" : ["FA", "FAD", "FAD+P", "FAD+S", "FedAUX", "FD"],
 	"outlier_model" : [["ocsvm", {"gamma" : 0.03125}]],
 	
 
@@ -36,7 +36,7 @@ hyperparameters=' [{
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["experiment_large_server/"],
+	"log_path" : ["experiment_large_server_3distill/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
