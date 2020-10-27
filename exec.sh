@@ -16,7 +16,7 @@ hyperparameters=' [{
 	
 
 	"n_clients" : [20],
-	"classes_per_client" : [100.0],
+	"classes_per_client" : [100.0, 0.01, 1.0],
 	"balancedness" : [1.0],
 
 
@@ -28,7 +28,7 @@ hyperparameters=' [{
 
 	
 	"batch_size" : [128],
-	"aggregation_mode" : ["FA", "FD"],
+	"aggregation_mode" : ["FA", "FD", "FAD", "FAD+P", "FAD+S", "FedAUX"],
 	"outlier_model" : [["ocsvm", {"gamma" : 0.03125}]],
 	
 
@@ -36,7 +36,7 @@ hyperparameters=' [{
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["one_distill_epoch/"],
+	"log_path" : ["experiment_large_server/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 

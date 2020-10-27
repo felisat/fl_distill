@@ -171,7 +171,7 @@ class Client(Device):
 
 
 
-  def train_outlier_detector(self, model, distill_loader, pretrained=True, **kw_args):
+  def train_outlier_detector(self, model, distill_loader, pretrained=False, **kw_args):
     from sklearn.decomposition import PCA
     from sklearn.svm import OneClassSVM
     from sklearn.ensemble import IsolationForest
