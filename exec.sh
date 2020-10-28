@@ -12,35 +12,36 @@ cmdargs=$1
 hyperparameters=' [{
 	"dataset" : ["cifar10"], 
 	"distill_dataset" : ["stl10"],
-	"net" : ["vgg11s"],
+	"net" : ["vgg11"],
 	
 
-	"n_clients" : [10],
+	"n_clients" : [2],
 	"classes_per_client" : [0.1],
 	"balancedness" : [1.0],
 
 
-	"communication_rounds" : [5],
-	"participation_rate" : [1.0],
-	"local_epochs" : [10],
+	"communication_rounds" : [2],
+	"participation_rate" : [1],
+	"local_epochs" : [2],
 	"distill_epochs" : [10],
-	"n_distill" : [10000],
+	"n_distill" : [100],
 	"warmup_type": ["tanh"],
 
-
 	"batch_size" : [512],
-	"local_data_percentage" : [0.25],
+	"local_data_percentage" : [1.0],
 	"distill_weight": [1],
 	"aggregation_mode" : ["FD"],
-	"distill_mode" : ["regular"],
-	"distill_phase" : ["server","clients"],
+	"distill_phase" : ["clients"],
+	"distill_mode" : ["outlier_score"],
+	"outlier_model" : [["ocsvm", {"gamma" : 0.03125}]],
 	"only_linear" : [false],
 	
 
-	"pretrained" : [null],
+	"pretrained" : ["simclr_vgg11_stl10_100epochs.pth"],
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
+
 	"log_path" : ["noniid/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 

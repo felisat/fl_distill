@@ -1,11 +1,12 @@
 #!/bin/bash
 
-cmdargs=$1
+max=$1
+step=$2
 
 head -n 50 exec.sh
-echo "Running $cmdargs experiments..."
+echo "Running $max experiments..."
 
-for (( c=0; c<$cmdargs; c++ ))
+for (( c=0; c<$max; c+=$step ))
 do
-   sbatch exec.sh "--start $c --end $(($c+1))"
+   sbatch exec.sh "--start $c --end $(($c+$step))"
 done

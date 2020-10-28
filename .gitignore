@@ -140,6 +140,8 @@ venv.bak/
 dmypy.json
 
 /data
+/node_modules
+.idea
 
 # Pyre type checker
 .pyre/

@@ -5,12 +5,13 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import ConcatDataset, TensorDataset, DataLoader
+import numpy as np
+from models import outlier_net
 
 from virtual_adversarial_training import VATLoss
 from data import DataloaderMerger
 
 import numpy as np
-
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -34,6 +35,7 @@ class Device(object):
         self.scheduler = optim.lr_scheduler.StepLR(
             self.optimizer, step_size=1, gamma=0.96
         )
+        self.c_round = 0
 
     def evaluate(self, loader=None):
         return eval_op(self.model, self.loaders if not loader else loader)
@@ -62,33 +64,107 @@ class Device(object):
 
         # vat_loss = VATLoss(xi=10.0, eps=1.0, ip=1)
 
-        assert mode in [
+        softlabels = []
+
+        valid_modes = [
             "regular",
+            "mean_logits",
             "weighted",
             "pate",
             "knn",
             "pate_up",
-        ], "mode has to be one of [regular, pate, knn]"
+            "momentum",
+            "count_weighted",
+            "outlier_score",
+            "adversaries",
+        ]
+        assert mode in valid_modes, "mode has to be one of {}".format(valid_modes)
+
+        # Use only clients who participated in the previous round for distilling except if momentum mode
+        print(clients)
+        c_max = max([client.c_round for client in clients])
+        if mode not in ["momentum"]:
+            clients = [c for c in clients if c.c_round == c_max]
 
         acc = 0
-        softlabels = []
         for ep in range(epochs):
             running_loss, samples = 0.0, 0
-            for x, _ in tqdm(self.distill_loader):
+            for (x, _), idx in tqdm(self.distill_loader):
                 x = x.to(device)
 
+                if mode == "momentum":
+                    y = torch.zeros([x.shape[0], 10], device="cuda")
+                    w = 0
+
+                    for i, client in enumerate(clients):
+                        if client.c_round > 0:
+                            y_p = client.predict(x)
+                            y += 0.8 ** (c_max - client.c_round) * y_p.detach()
+                            w += 0.8 ** (c_max - client.c_round)
+                    y = y / w
+
+                if mode == "count_weighted":
+                    y = torch.zeros([x.shape[0], 10], device="cuda")
+                    for i, client in enumerate(clients):
+                        normalized_counts = torch.Tensor(
+                            client.label_counts / client.label_counts.sum()
+                        ).cuda()
+
+                        y_p = 10 ** (client.predict(x) - normalized_counts)
+                        y_p /= y_p.sum(dim=1).view(-1, 1)
+
+                        y += (y_p / len(clients)).detach()
+
                 if mode == "regular":
-                    y = torch.zeros([x.shape[0], 10], device=device)
+                    y = torch.zeros([x.shape[0], 10], device="cuda")
                     for i, client in enumerate(clients):
                         y_p = client.predict(x)
                         y += (y_p / len(clients)).detach()
 
-                if mode == "weighted":
-                    y = torch.zeros([x.shape[0], 10], device=device)
-                    w = torch.zeros([x.shape[0], 1], device=device)
+                if mode == "adversaries":
+                    y = torch.zeros([x.shape[0], 10], device="cuda")
+                    for i, client in enumerate(clients):
+                        if client.is_adversary:
+                            y_p = client.predict_random(x)
+                        else:
+                            y_p = client.predict(x)
+                        y += (y_p / len(clients)).detach()
+
+                if mode == "mean_logits":
+                    y = torch.zeros([x.shape[0], 10], device="cuda")
+                    for i, client in enumerate(clients):
+                        y_p = client.predict_logit(x)
+                        y += (y_p / len(clients)).detach()
+
+                    y = nn.Softmax(1)(y)
+
+                if mode == "weighted_logits":
+                    y = torch.zeros([x.shape[0], 10], device="cuda")
+                    w = torch.zeros([x.shape[0], 1], device="cuda")
+                    for i, client in enumerate(clients):
+                        y_p = client.predict_logit(x)
+                        weight = client.predict_outlier_score(idx).reshape(-1, 1).cuda()
+
+                        # print(client.label_counts)
+                        # for i,j in zip(_,weight):
+                        #  print(i, j)
+                        # exit()
+
+                        y += (y_p * weight).detach()
+                        w += weight.detach()
+                    y = nn.Softmax(1)(y / w)
+
+                if mode == "outlier_score":
+                    y = torch.zeros([x.shape[0], 10], device="cuda")
+                    w = torch.zeros([x.shape[0], 1], device="cuda")
                     for i, client in enumerate(clients):
                         y_p = client.predict(x)
-                        weight = client.predict_knn_weight(x).view(-1, 1)
+                        weight = client.predict_outlier_score(idx).reshape(-1, 1).cuda()
+
+                        # print(client.label_counts)
+                        # for i,j in zip(_,weight):
+                        #  print(i, j)
+                        # exit()
 
                         y += (y_p * weight).detach()
                         w += weight.detach()
@@ -111,7 +187,7 @@ class Device(object):
                     )
 
                 if mode in "knn":
-                    scores = torch.zeros([x.shape[0], 10], device=device)
+                    scores = torch.zeros([x.shape[0], 10], device="cuda")
                     for i, client in enumerate(clients):
                         y_p = client.predict_knn(x, k=10)
                         scores += (y_p / len(clients)).detach()
@@ -198,19 +274,25 @@ class Client(Device):
         aux_data=None,
         distill_loader=None,
         init=None,
+        idnum=None,
         **kwargs,
     ):
         super().__init__(model_fn, optimizer_fn, loader, distill_loader, init)
         self.kwargs = kwargs
+        self.id = idnum
+        self.feature_extractor = None
 
     def set_combined_dataloader(self, loader):
         self.loaders["aux_loader"] = loader
 
-    def synchronize_with_server(self, server):
+    def synchronize_with_server(self, server, c_round):
         self.model.load_state_dict(server.model.state_dict())
+        self.c_round = c_round
         # copy(target=self.W, source=server.W)
 
-    def compute_weight_update(self, epochs=1, loader=None, **kwargs):
+    def compute_weight_update(self, epochs=1, loader=None, reset_optimizer=True, **kwargs):
+        if reset_optimizer:
+            self.optimizer = self.optimizer_fn(self.model.parameters())
         train_stats = train_op(
             self.model,
             self.loaders if not loader else loader,
@@ -229,6 +311,14 @@ class Client(Device):
 
         return y_
 
+    def predict_logit(self, x):
+        """Softmax prediction on input"""
+        self.model.eval()
+        with torch.no_grad():
+            y_ = self.model(x)
+
+        return y_
+
     def predict_(self, x):
         """Argmax prediction on input"""
         self.model.eval()
@@ -243,6 +333,14 @@ class Client(Device):
             t[torch.arange(y_.shape[0]), amax] = 1
 
         return t.detach()
+
+    def predict_random(self, x):
+        """Softmax prediction on input"""
+        adv = torch.zeros(size=[x.shape[0], 10], device="cuda")
+        adv[:, 0] = 1.0
+        # rand = torch.rand(size=[x.shape[0],10]).cuda()
+        # rand = rand / torch.sum(rand, axis=-1).reshape(-1,1)
+        return adv
 
     def generate_feature_bank(self):
         """Extracts Features of local data using local neural network"""
@@ -321,6 +419,133 @@ class Client(Device):
 
         return torch.cat(predictions, dim=0).detach().cpu().numpy()
 
+    def train_outlier_detector(self):
+        self.outlier_model = outlier_net().cuda()
+        optimizer = torch.optim.Adam(
+            self.outlier_model.parameters(), lr=0.001, weight_decay=1e-6
+        )
+
+        x = iter(self.loader).next()[0].cuda()
+        self.outlier_c = torch.mean(self.outlier_model(x), dim=0).detach()
+
+        n_epochs = 100
+        for epoch in range(n_epochs + 1):
+            train_loss = 0.0
+            for x, _ in self.loader:
+                x = x.cuda()
+                optimizer.zero_grad()
+                r = self.outlier_model(x)
+                loss = torch.mean((r - self.outlier_c) ** 2)
+                loss.backward()
+                optimizer.step()
+                train_loss += loss.item() * x.size(0)
+
+            train_loss = train_loss / len(self.loader)
+        print("Epoch: {} \tTraining Loss: {}".format(epoch, train_loss))
+        self.mean_outlier_loss = train_loss
+
+    def predict_outlier_score(self, x):
+        with torch.no_grad():
+            r = self.outlier_model(x)
+            loss = torch.mean((r - self.outlier_c) ** 2, dim=-1)
+
+        return loss.detach() / self.mean_outlier_loss
+
+    def train_outlier_detector(self, model, distill_loader, **kw_args):
+        from sklearn.decomposition import PCA
+        from sklearn.svm import OneClassSVM
+        from sklearn.ensemble import IsolationForest
+        from sklearn.neural_network import MLPRegressor
+        from sklearn.neighbors import KernelDensity
+
+        if self.feature_extractor is not None:
+            X_train = (
+                torch.cat(
+                    [
+                        self.feature_extractor.f(x[0][:, :].cuda()).detach().cpu()
+                        for x in self.loader
+                    ],
+                    dim=0,
+                )
+                .reshape(-1, 512)
+                .numpy()
+            )
+            X_distill = (
+                torch.cat(
+                    [
+                        self.feature_extractor.f(x[0][0][:, 0].cuda()).detach().cpu()
+                        for x in distill_loader
+                    ],
+                    dim=0,
+                )
+                .reshape(-1, 512)
+                .numpy()
+            )
+        else:
+            X_train = (
+                torch.cat([x[0][:, 0] for x in self.loader], dim=0)
+                .reshape(-1, 1 * 32 * 32)
+                .numpy()
+            )
+            X_distill = (
+                torch.cat([x[0][0][:, 0] for x in distill_loader], dim=0)
+                .reshape(-1, 1 * 32 * 32)
+                .numpy()
+            )
+
+        pca = PCA(n_components=0.95, svd_solver="full", whiten=True)
+        pca.fit(X_train)
+        X_train_ = pca.transform(X_train)
+        X_distill_ = pca.transform(X_distill)
+
+        if model == "ocsvm":
+            self.outlier_model = OneClassSVM(**kw_args).fit(X_train_)
+            self.outlier_model.score = lambda x: self.outlier_model.score_samples(x)
+
+        elif model == "isolation_forest":
+            self.outlier_model = IsolationForest(**kw_args).fit(X_train_)
+
+        elif model == "kde":
+            self.outlier_model = KernelDensity(**kw_args).fit(X_train_)
+            self.outlier_model.score = lambda x: np.exp(
+                self.outlier_model.score_samples(x)
+            )
+
+        elif model == "autoencoder":
+            self.outlier_model = MLPRegressor(
+                hidden_layer_sizes=(200, 100, 50, 100, 200),
+                activation="relu",
+                solver="adam",
+                learning_rate_init=0.0001,
+                max_iter=100,
+                verbose=False,
+                **kwargs
+            ).fit(X_train_, X_train_)
+
+        scores = self.outlier_model.score(X_distill_)
+
+        norm_scores = (scores - np.min(scores)) / (np.max(scores) - np.min(scores))
+        # norm_scores = sigmoid((scores - np.mean(scores))/np.std(scores))
+        # self.outlier_model.pca = pca
+        # self.outlier_model.mean = np.mean()
+        # self.outlier_model.std = np.std(self.outlier_model.score_samples(X_distill_))
+
+        self.scores = torch.Tensor(norm_scores)
+
+    def predict_outlier_score(self, idcs):
+        return self.scores[idcs]
+
+
+"""  def predict_outlier_score(self, x):
+
+    if self.feature_extractor is not None:
+      x = self.feature_extractor.f(x.cuda()).detach().cpu().numpy().reshape(-1,512)
+    else:
+      x = x[:,0].cpu().detach().numpy().reshape(-1,1*32*32)
+    x = self.outlier_model.pca.transform(x)
+
+    return self.outlier_model.score_samples(x)#sigmoid((self.outlier_model.score_samples(x)-self.outlier_model.mean)/self.outlier_model.std)#"""
+
 
 class Server(Device):
     def __init__(
@@ -396,6 +621,7 @@ def train_op(model, loaders, optimizer, scheduler, epochs, **kwargs):
 
             # minibatch_loss.append(loss.unsqueeze(dim=0).detach().to('cpu'))
 
+
             running_loss += loss.item() * y.shape[0]
             samples += y.shape[0]
 
@@ -455,3 +681,7 @@ def subtract_(target, minuend, subtrahend):
         target[name].data = (
             minuend[name].detach().clone() - subtrahend[name].detach().clone()
         )
+
+
+def sigmoid(x):
+    return np.exp(x) / (1 + np.exp(x))

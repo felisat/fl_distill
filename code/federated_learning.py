@@ -51,7 +51,7 @@ def run_experiment(xp, xp_count, n_experiments):
     distill_data_raw = torch.stack([x for x, y in distill_data], dim=0)
 
     # get data loaders
-    client_loaders, test_loader, client_data, test_data = data.get_loaders(
+    client_loaders, test_loader, client_data, test_data, label_counts = data.get_loaders(
         train_data,
         test_data,
         n_clients=hp["n_clients"],
@@ -79,7 +79,7 @@ def run_experiment(xp, xp_count, n_experiments):
     ]
     server = Server(
         model_fn,
-        lambda x: torch.optim.Adam(x, lr=0.001, weight_decay=5e-4),
+        lambda x: torch.optim.SGD(x, lr=0.01, momentum=0.9),
         test_loader,
         distill_loader,
         clients=clients,
@@ -87,6 +87,9 @@ def run_experiment(xp, xp_count, n_experiments):
         **hp,
     )
     # server.load_model(path=args.CHECKPOINT_PATH, name=hp["pretrained"])
+
+    for client, counts in zip(clients, label_counts):
+        client.label_counts = counts
 
     if hp["pretrained"]:
         for device in clients + [server]:
@@ -104,6 +107,27 @@ def run_experiment(xp, xp_count, n_experiments):
             for param in device.model.f.parameters():
                 param.requires_grad = False
 
+
+    if "n_adversaries" in hp:
+        for client in clients:
+            if client.id < hp["n_adversaries"]:
+                client.is_adversary = True
+            else:
+                client.is_adversary = False
+
+    if hp["distill_mode"] == "outlier_score":
+        # feature_extractor = models.lenet_large().cuda()
+        # feature_extractor.load_state_dict(torch.load(args.CHECKPOINT_PATH+"simclr_lenet_stl10_10epochs.pth", map_location='cpu'), strict=False)
+        # feature_extractor.eval()
+        # for client in clients:
+        #  client.feature_extractor = feature_extractor
+
+        print("Train Outlier Detectors")
+        for client in tqdm(clients):
+            client.train_outlier_detector(
+                hp["outlier_model"][0], distill_loader, **hp["outlier_model"][1]
+            )
+
     # print model
     models.print_model(server.model)
 
@@ -114,11 +138,12 @@ def run_experiment(xp, xp_count, n_experiments):
     xp.log({f"server_val_{key}": value for key, value in server.evaluate().items()})
     for c_round in range(1, hp["communication_rounds"] + 1):
 
+        print(clients)
         participating_clients = server.select_clients(clients, hp["participation_rate"])
 
         train_stats_clients = []
         for client in tqdm(participating_clients):
-            client.synchronize_with_server(server)
+            client.synchronize_with_server(server, c_round)
             # client.generate_feature_bank()
 
             train_stats = client.compute_weight_update(
@@ -141,7 +166,7 @@ def run_experiment(xp, xp_count, n_experiments):
         # )
 
         # use FA or if normal client distillation aggregate on server
-        if hp["aggregation_mode"] in ["FA", "FAD"] or hp["distill_phase"] == "clients":
+        if hp["aggregation_mode"] in ["FA", "FAD"] :
             server.aggregate_weight_updates(
                 participating_clients,
                 distill_phase=hp["distill_phase"],
@@ -151,8 +176,8 @@ def run_experiment(xp, xp_count, n_experiments):
         if hp["aggregation_mode"] in ["FD", "FAD", "FknnD"]:
 
             distill_stats = server.distill(
-                participating_clients,
-                hp["distill_epochs"],
+                clients=participating_clients,
+                epochs=hp["distill_epochs"],
                 mode=hp["distill_mode"],
                 distill_phase=hp["distill_phase"],
             )
@@ -166,7 +191,11 @@ def run_experiment(xp, xp_count, n_experiments):
 
         # Logging
         if xp.is_log_round(c_round):
-            print(f"Experiment: {args.schedule} ({xp_count+1}/{n_experiments})")
+            print(
+                "Experiment: {} ({}/{})".format(
+                    args.schedule, xp_count + 1, n_experiments
+                )
+            )
 
             xp.log(
                 {"communication_round": c_round, "epochs": c_round * hp["local_epochs"]}
@@ -179,8 +208,13 @@ def run_experiment(xp, xp_count, n_experiments):
             )
 
             # Evaluate
+            # xp.log({"client_train_{}".format(key) : value for key, value in train_stats.items()})
+            # xp.log({"client_val_{}".format(key) : value for key, value in client.evaluate(server.loader).items()})
             xp.log(
-                {f"server_val_{key}": value for key, value in server.evaluate().items()}
+                {
+                    "server_val_{}".format(key): value
+                    for key, value in server.evaluate().items()
+                }
             )
 
             # Save results to Disk

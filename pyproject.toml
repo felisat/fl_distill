@@ -12,6 +12,7 @@ altair = "^4.1.0"
 altair_saver = "^0.5.0"
 torch = "^1.6.0"
 torchvision = "^0.7.0"
+scikit-learn = "^0.23.2"
 
 [tool.poetry.dev-dependencies]
 jupyterlab = "^2.2.8"

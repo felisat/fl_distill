@@ -3,12 +3,17 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torchvision.models import resnet18
+from torchvision.models.resnet import ResNet, BasicBlock
 import numpy as np
 import torchvision
 
 from functools import partial
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+
+
+def ResNet8():
+    return ResNet(BasicBlock, [1, 1, 1, 1], num_classes=10)
 
 
 class VGG(nn.Module):
@@ -70,6 +75,9 @@ def vgg11sb():
         size=128,
         batch_norm=True,
     )
+
+def vgg11():
+    return VGG([64, "M", 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"])
 
 
 def vgg16():
@@ -235,6 +243,28 @@ class lenet_cifar(nn.Module):
         return x
 
 
+class lenet_large(nn.Module):
+    def __init__(self):
+        super(lenet_large, self).__init__()
+        self.conv1 = nn.Conv2d(3, 20, 5)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(20, 50, 5)
+        self.fc1 = nn.Linear(50 * 5 * 5, 512)
+        self.fc2 = nn.Linear(512, 10)
+
+    def f(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = x.view(-1, 50 * 5 * 5)
+        x = F.relu(self.fc1(x))
+        return x
+
+    def forward(self, x):
+        x = self.f(x)
+        x = self.fc2(x)
+        return x
+
+
 class lenet_mnist(torch.nn.Module):
     def __init__(self):
         super(lenet_mnist, self).__init__()
@@ -269,7 +299,7 @@ def apply_gn(model):
         if isinstance(c, nn.BatchNorm2d):
             # print(n, c.num_features)
             setattr(
-                model, n, torch.nn.GroupNorm(num_groups=2, num_channels=c.num_features)
+                model, n, torch.nn.GroupNorm(num_groups=4, num_channels=c.num_features)
             )
 
 
@@ -391,6 +421,22 @@ class simclrVGG11(nn.Module):
         return out
 
 
+class outlier_net(nn.Module):
+    def __init__(self):
+        super(outlier_net, self).__init__()
+        self.conv1 = nn.Conv2d(3, 8, 5, bias=False)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(8, 4, 5, bias=False)
+        self.fc1 = nn.Linear(4 * 5 * 5, 32, bias=False)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = x.view(-1, 4 * 5 * 5)
+        x = self.fc1(x)
+        return x
+
+
 def get_model(model):
 
     return {
@@ -404,12 +450,21 @@ def get_model(model):
             optim.SGD,
             {"lr": 0.04, "momentum": 0.9, "weight_decay": 5e-5},
         ),
-        "vgg11sb": (
-            vgg11sb,
+        "vgg11": (
+            vgg11,
             optim.SGD,
-            {"lr": 0.04, "momentum": 0.9, "weight_decay": 5e-5},
+            {"lr": 0.01, "momentum": 0.9, "weight_decay": 5e-5},
         ),
-        "lenet_cifar": (lenet_cifar, optim.Adam, {"lr": 0.001, "weight_decay": 0.0}),
+        "lenet_cifar": (
+            lenet_cifar,
+            optim.SGD,
+            {"lr": 0.01, "momentum": 0.9, "weight_decay": 0.0},
+        ),
+        "lenet_large": (
+            lenet_large,
+            optim.SGD,
+            {"lr": 0.01, "momentum": 0.9, "weight_decay": 0.0},
+        ),
         "lenet_mnist": (lenet_mnist, optim.Adam, {"lr": 0.001, "weight_decay": 0.0}),
         "mobilenetv2": (
             mobilenetv2,
@@ -438,6 +493,11 @@ def get_model(model):
         ),
         "simclr_net_bn": (
             simclr_net_bn,
+            optim.SGD,
+            {"lr": 0.1, "momentum": 0.9, "weight_decay": 5e-4},
+        ),
+        "resnet8": (
+            ResNet8,
             optim.SGD,
             {"lr": 0.1, "momentum": 0.9, "weight_decay": 5e-4},
         ),
