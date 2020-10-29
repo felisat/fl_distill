@@ -11,7 +11,7 @@ cmdargs=$1
 
 hyperparameters=' [{
 	"dataset" : ["cifar10"], 
-	"distill_dataset" : ["cifar100"],
+	"distill_dataset" : ["stl10"],
 	"net" : ["resnet8_bn"],
 	
 
@@ -21,10 +21,10 @@ hyperparameters=' [{
 
 
 	"communication_rounds" : [50],
-	"participation_rate" : [0.4],
+	"participation_rate" : [0.4, 1.0],
 	"local_epochs" : [10],
 	"distill_epochs" : [3],
-	"n_distill" : [25000], 
+	"n_distill" : [50000], 
 
 	
 	"batch_size" : [128],
