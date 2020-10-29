@@ -267,13 +267,14 @@ class Model(nn.Module):
 
 
 class resnet8_bn(nn.Module):
-    def __init__(self, num_class=10, z_dim=32, pretrained_path=None, group_norm=False):
+    def __init__(self, num_class=10, pretrained_path=None, group_norm=False):
         super(resnet8_bn, self).__init__()
 
         # encoder
         self.f = Model(group_norm=group_norm).f
         # classifier
         self.fc = nn.Linear(512, num_class, bias=True)
+        self.binary = nn.Linear(512, 2, bias=True)
 
 
         if pretrained_path:
@@ -283,6 +284,12 @@ class resnet8_bn(nn.Module):
         x = self.f(x)
         feature = torch.flatten(x, start_dim=1)
         out = self.fc(feature)
+        return out
+
+    def forward_binary(self, x):
+        x = self.f(x)
+        feature = torch.flatten(x, start_dim=1)
+        out = self.binary(feature)
         return out
 
 
@@ -410,7 +417,7 @@ def get_model(model):
               "mobilenetv2xs" : (mobilenetv2xs, optim.SGD, {"lr" : 0.01, "momentum" :0.9, "weight_decay" :5e-4}),
               "mobilenetv2_gn" : (mobilenetv2_gn, optim.SGD, {"lr" : 0.01, "momentum" :0.9, "weight_decay" :5e-4}),
               "resnet8_gn" : (resnet8_gn, optim.SGD, {"lr" : 0.1, "momentum" : 0.9, "weight_decay" :5e-4}),
-                "resnet8_bn" : (resnet8_bn, optim.SGD, {"lr" : 0.1, "momentum" : 0.0, "weight_decay" : 5e-4}),
+                "resnet8_bn" : (resnet8_bn, optim.Adam, {"lr" : 0.001}),
                     "simclr_vgg11" : (simclrVGG11, optim.Adam, {"lr" : 0.001, "weight_decay" :5e-4})
           }[model]
 

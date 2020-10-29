@@ -38,6 +38,19 @@ def get_cifar10(path):
   return train_data, test_data
 
 
+def get_cifar_distill(path):
+  transforms = torchvision.transforms.Compose([
+                                          #torchvision.transforms.RandomCrop(32, padding=4),
+                                          #torchvision.transforms.RandomHorizontalFlip(),
+                                          torchvision.transforms.ToTensor(),
+                                          torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), 
+                                                               (0.2023, 0.1994, 0.2010))
+                                          ])
+  test_data = torchvision.datasets.CIFAR10(root=path+"CIFAR", train=True, download=True, transform=transforms)
+
+  return test_data
+
+
 def get_cifar100(path):
   transforms = torchvision.transforms.Compose([
                                           #torchvision.transforms.RandomCrop(32, padding=4),
@@ -77,7 +90,7 @@ def get_svhn(path):
 
 
 def get_data(dataset, path):
-  return {"cifar10" : get_cifar10, "mnist" : get_mnist, "emnist" : get_emnist,"stl10" : get_stl10, "svhn" : get_svhn, "cifar100" : get_cifar100}[dataset](path)
+  return {"cifar10" : get_cifar10, "mnist" : get_mnist, "emnist" : get_emnist,"stl10" : get_stl10, "svhn" : get_svhn, "cifar100" : get_cifar100, "cifar_distill" : get_cifar_distill}[dataset](path)
 
 def get_loaders(train_data, test_data, n_clients=10, classes_per_client=0, batch_size=128, n_data=None):
 

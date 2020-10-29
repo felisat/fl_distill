@@ -33,13 +33,16 @@ def run_experiment(xp, xp_count, n_experiments):
   model_fn, optimizer, optimizer_hp = models.get_model(hp["net"])
   optimizer_fn = lambda x : optimizer(x, **{k : hp[k] if k in hp else v for k, v in optimizer_hp.items()}) 
   train_data, test_data = data.get_data(hp["dataset"], args.DATA_PATH)
-  distill_data = data.get_data(hp["distill_dataset"], args.DATA_PATH)
+  all_distill_data = data.get_data(hp["distill_dataset"], args.DATA_PATH)
+
   np.random.seed(0)
-  distill_data = data.IdxSubset(distill_data, np.random.permutation(len(distill_data))[:hp["n_distill"]])
+  distill_data = data.IdxSubset(all_distill_data, np.random.permutation(len(all_distill_data))[:hp["n_distill"]])
+  public_data = data.IdxSubset(all_distill_data, np.random.permutation(len(all_distill_data))[hp["n_distill"]:len(all_distill_data)])
 
   client_loaders, test_loader, label_counts = data.get_loaders(train_data, test_data, n_clients=hp["n_clients"], 
         classes_per_client=hp["classes_per_client"], batch_size=hp["batch_size"], n_data=None)
   distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=False)
+  public_loader = torch.utils.data.DataLoader(public_data, batch_size=128, shuffle=True)
 
   clients = [Client(model_fn, optimizer_fn, loader, idnum=i) for i, loader in enumerate(client_loaders)]
   server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=2e-3), test_loader, distill_loader)
@@ -48,6 +51,8 @@ def run_experiment(xp, xp_count, n_experiments):
 
   for client, counts in zip(clients, label_counts):
     client.label_counts = counts
+    client.public_loader = public_loader
+    client.distill_loader = distill_loader
 
   if hp["aggregation_mode"] in ["FAD+P", "FedAUX"]:
   #if hp["pretrained"]:
@@ -69,16 +74,16 @@ def run_experiment(xp, xp_count, n_experiments):
 
 
 
-  if hp["aggregation_mode"] in ["FAD+S", "FedAUX"]:
-    feature_extractor = model_fn().cuda()
-    feature_extractor.load_state_dict(torch.load(args.CHECKPOINT_PATH+hp["pretrained"], map_location='cpu'), strict=False)
-    feature_extractor.eval()
-    for client in clients:
-      client.feature_extractor = feature_extractor
-
-    print("Train Outlier Detectors")
-    for client in tqdm(clients):
-      client.train_outlier_detector(hp["outlier_model"][0], distill_loader, **hp["outlier_model"][1])
+  """if hp["aggregation_mode"] in ["FAD+S", "FedAUX"]:
+          feature_extractor = model_fn().cuda()
+          feature_extractor.load_state_dict(torch.load(args.CHECKPOINT_PATH+hp["pretrained"], map_location='cpu'), strict=False)
+          feature_extractor.eval()
+          for client in clients:
+            client.feature_extractor = feature_extractor
+      
+          print("Train Outlier Detectors")
+          for client in tqdm(clients):
+            client.train_outlier_detector(hp["outlier_model"][0], distill_loader, **hp["outlier_model"][1])"""
 
   # print model
   models.print_model(server.model)

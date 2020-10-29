@@ -54,10 +54,12 @@ class Client(Device):
     self.c_round = c_round
     #copy(target=self.W, source=server.W)
     
-  def compute_weight_update(self, epochs=1, loader=None, reset_optimizer=True):
+  def compute_weight_update(self, epochs=1, loader=None, reset_optimizer=False):
     if reset_optimizer:
       self.optimizer = self.optimizer_fn(self.model.parameters())  
-    train_stats = train_op(self.model, self.loader if not loader else loader, self.optimizer, self.scheduler, epochs)
+    train_stats = train_op_with_score(self.model, self.loader if not loader else loader, self.public_loader, self.optimizer, self.scheduler, epochs)
+    print(self.label_counts)
+    #eval_scores(self.model, self.distill_loader)
     return train_stats
 
   def predict(self, x):
@@ -232,8 +234,12 @@ class Client(Device):
 
     self.scores = torch.Tensor(norm_scores)
 
-  def predict_outlier_score(self, idcs):
-    return self.scores[idcs]
+  #def predict_outlier_score(self, idcs):
+  #  return self.scores[idcs]
+
+
+  def predict_outlier_score(self, x):
+    return torch.nn.Softmax(1)(self.model.forward_binary(x.cuda()))[:,0]
 
 
 """  def predict_outlier_score(self, x):
@@ -304,7 +310,7 @@ class Server(Device):
           w = torch.zeros([x.shape[0], 1], device="cuda")
           for i, client in enumerate(clients):
             y_p = client.predict(x)
-            weight = client.predict_outlier_score(idx).reshape(-1,1).cuda()
+            weight = client.predict_outlier_score(x).reshape(-1,1).cuda()
 
             y += (y_p*weight).detach()
             w += weight.detach()
@@ -426,31 +432,55 @@ def train_op(model, loader, optimizer, scheduler, epochs):
 
 
 
-def train_with_oc_op(model, loader, optimizer, scheduler, epochs):
+def train_op_with_score(model, loader, public_loader, optimizer, scheduler, epochs):
     model.train()  
-    running_loss, running_oc_loss, samples = 0.0, 0.0, 0
+    running_loss, running_class, running_ent, running_binary, samples = 0.0, 0.0, 0.0, 0.0, 0
     for ep in range(epochs):
-      for x, y in loader:   
+      for (x, y), ((x_pub, y_pub), idx) in zip(loader, public_loader):   
         x, y = x.to(device), y.to(device)
-        
+        x_pub, y_pub = x_pub.to(device), y_pub.to(device)
+
+        x_joined = torch.cat([x, x_pub])
+        y_joined = torch.cat([torch.zeros(len(y)), torch.ones(len(y_pub))]).long().to(device)
+
         optimizer.zero_grad()
 
         classification_loss = nn.CrossEntropyLoss()(model(x), y)
 
-        oc_loss = torch.mean(model.predict_outlier_score(x))
+        p = torch.nn.Softmax(1)(model.forward_binary(x_joined))
+        ent = -torch.mean(torch.sum(p * torch.log(p), dim=1))
+        
+        outlier_loss = nn.CrossEntropyLoss()(model.forward_binary(x_joined), y_joined)
 
-        loss = classification_loss + oc_loss
+
+        loss =  outlier_loss + classification_loss #+ ent # 
 
         running_loss += loss.item()*y.shape[0]
-        running_oc_loss += oc_loss.item()*y.shape[0]
+        running_ent += ent.item()*y.shape[0]
+        running_binary += outlier_loss.item()*y.shape[0]
+        running_class += classification_loss.item()*y.shape[0]
+
         samples += y.shape[0]
 
         loss.backward()
         optimizer.step()  
       #scheduler.step()
+      #print({"loss" : running_loss / samples, "outlier_loss" : running_binary / samples, "entropy_loss" : running_ent / samples, "classification_loss" : running_class / samples})
+    return {"loss" : running_loss / samples, "outlier_loss" : running_binary / samples, "entropy_loss" : running_ent / samples,"classification_loss" : running_class / samples}
 
-    return {"loss" : running_loss / samples, "oc_loss" : running_oc_loss / samples}
 
+def eval_scores(model, eval_loader):
+    preds = []
+    ys = []
+    for (x, y), idx in eval_loader:
+        preds += [torch.nn.Softmax(1)(model.forward_binary(x.cuda()))[:,0].cpu().detach().numpy()] 
+        ys += [y.numpy()]
+        
+    preds = np.concatenate(preds)
+    ys = np.concatenate(ys)
+
+    for i in range(10):
+      print(" -",i, np.mean(preds[ys==i]), "+-", np.std(preds[ys==i]))
 
 
 def eval_op(model, loader):
