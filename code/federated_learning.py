@@ -90,7 +90,7 @@ def run_experiment(xp, xp_count, n_experiments):
     for client in tqdm(participating_clients):
       client.synchronize_with_server(server, c_round)
 
-      train_stats = client.compute_weight_update(hp["local_epochs"], train_oulier_model=hp["aggregation_mode"] in ["FAD+S", "FAD+P+S"], **hp) 
+      train_stats = client.compute_weight_update(hp["local_epochs"], train_oulier_model=hp["aggregation_mode"] in ["FAD+S", "FAD+P+S"]) 
       print(train_stats)
 
     if hp["aggregation_mode"] in ["FA", "FAD", "FAD+P", "FAD+S", "FAD+P+S"]:
