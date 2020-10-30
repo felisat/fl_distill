@@ -5,7 +5,9 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 import numpy as np 
+
 from models import outlier_net
+from data import DataloaderMerger
 
 from virtual_adversarial_training import VATLoss
 
@@ -17,7 +19,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 class Device(object):
   def __init__(self, model_fn, optimizer_fn, loader, init=None):
     self.model = model_fn().to(device)
-    self.loader = loader
+    self.loader = DataloaderMerger({"base": loader})
 
     self.W = {key : value for key, value in self.model.named_parameters()}
     self.dW = {key : torch.zeros_like(value) for key, value in self.model.named_parameters()}
@@ -54,11 +56,11 @@ class Client(Device):
     self.c_round = c_round
     #copy(target=self.W, source=server.W)
     
-  def compute_weight_update(self, epochs=1, loader=None, reset_optimizer=False, train_oulier_model=False):
+  def compute_weight_update(self, epochs=1, loader=None, reset_optimizer=False, train_oulier_model=False, **kwargs):
     if reset_optimizer:
       self.optimizer = self.optimizer_fn(self.model.parameters())  
     if train_oulier_model:
-      train_stats = train_op_with_score(self.model, self.loader if not loader else loader, self.public_loader, self.optimizer, self.scheduler, epochs)
+      train_stats = train_op_with_score(self.model, self.loader if not loader else loader, self.public_loader, self.optimizer, self.scheduler, epochs, **kwargs)
     else:
       train_stats = train_op(self.model, self.loader if not loader else loader, self.optimizer, self.scheduler, epochs)
     #print(self.label_counts)
@@ -245,7 +247,7 @@ def train_op(model, loader, optimizer, scheduler, epochs):
     model.train()  
     running_loss, samples = 0.0, 0
     for ep in range(epochs):
-      for x, y in loader:   
+      for x, y, source in loader:   
         x, y = x.to(device), y.to(device)
         
         optimizer.zero_grad()
@@ -262,25 +264,21 @@ def train_op(model, loader, optimizer, scheduler, epochs):
 
 
 
-def train_op_with_score(model, loader, public_loader, optimizer, scheduler, epochs):
+def train_op_with_score(model, loader, public_loader, optimizer, scheduler, epochs, **kwargs):
     model.train()  
     running_loss, running_class, running_ent, running_binary, samples = 0.0, 0.0, 0.0, 0.0, 0
     for ep in range(epochs):
-      for (x, y), ((x_pub, y_pub), idx) in zip(loader, public_loader):   
-        x, y = x.to(device), y.to(device)
-        x_pub, y_pub = x_pub.to(device), y_pub.to(device)
-
-        x_joined = torch.cat([x, x_pub])
-        y_joined = torch.cat([torch.zeros(len(y)), torch.ones(len(y_pub))]).long().to(device)
+      for x, y, source in loader:   
+        x, y, source = x.to(device), y.to(device), source.to(device).long()
 
         optimizer.zero_grad()
 
-        classification_loss = nn.CrossEntropyLoss()(model(x), y)
+        classification_loss = nn.CrossEntropyLoss()(model(x[source == 0]), y[source == 0])
 
-        p = torch.nn.Softmax(1)(model.forward_binary(x_joined))
+        p = torch.nn.Softmax(1)(model.forward_binary(x))
         ent = -torch.mean(torch.sum(p * torch.log(p), dim=1))
         
-        outlier_loss = nn.CrossEntropyLoss()(model.forward_binary(x_joined), y_joined)
+        outlier_loss = nn.CrossEntropyLoss()(model.forward_binary(x), source)
 
         loss =  outlier_loss + classification_loss #+ ent # 
 
@@ -317,7 +315,7 @@ def eval_op(model, loader):
     samples, correct = 0, 0
 
     with torch.no_grad():
-      for i, (x, y) in enumerate(loader):
+      for i, (x, y, source) in enumerate(loader):
         x, y = x.to(device), y.to(device)
 
         y_ = model(x)
