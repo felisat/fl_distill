@@ -50,7 +50,9 @@ class Client(Device):
     self.feature_extractor = None
     
   def synchronize_with_server(self, server, c_round):
-    self.model.load_state_dict(server.model.state_dict(), strict=False)
+    server_state = server.model.state_dict()
+    server_state = {k : v for k, v in server_state.items() if "binary" not in k}
+    self.model.load_state_dict(server_state, strict=False)
     self.c_round = c_round
     #copy(target=self.W, source=server.W)
     
@@ -160,9 +162,10 @@ class Server(Device):
     reduce_average(target=self.W, sources=[client.W for client in clients])
 
 
-  def distill(self, clients, epochs=1, mode="regular"):
+  def distill(self, clients, epochs=1, mode="regular", reset_optimizer=False, acc0=0.0):
     print("Distilling...")
-    self.optimizer = self.optimizer_fn(self.model.parameters())   
+    if reset_optimizer:
+      self.optimizer = self.optimizer_fn(self.model.parameters())   
     self.model.train()  
 
     valid_modes = ["mean_probs", "mean_logits", "probs_weighted_with_deep_outlier_score", "logits_weighted_with_deep_outlier_score", "pate", "pate_up"]
@@ -234,8 +237,8 @@ class Server(Device):
 
       acc_new = eval_op(self.model, self.loader)["accuracy"]
       print(acc_new)
-      #if acc_new < 0.11:
-      #  self.aggregate_weight_updates(clients)
+      if acc_new < acc0:
+        self.aggregate_weight_updates(clients)
 
     return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
 
@@ -282,7 +285,7 @@ def train_op_with_score(model, loader, public_loader, optimizer, scheduler, epoc
         
         outlier_loss = nn.CrossEntropyLoss()(model.forward_binary(x_joined), y_joined)
 
-        loss =  outlier_loss + classification_loss #+ ent # 
+        loss =  0.1 * outlier_loss + classification_loss #+ ent # 
 
         running_loss += loss.item()*y.shape[0]
         running_ent += ent.item()*y.shape[0]
@@ -295,7 +298,7 @@ def train_op_with_score(model, loader, public_loader, optimizer, scheduler, epoc
         optimizer.step()  
       #scheduler.step()
 
-    return {"loss" : running_loss / samples, "outlier_loss" : running_binary / samples, "entropy_loss" : running_ent / samples,"classification_loss" : running_class / samples}
+    return {"loss" : running_loss / samples, "outlier_loss" : running_binary / samples, "entropy_loss" : running_ent / samples, "classification_loss" : running_class / samples}
 
 
 def eval_scores(model, eval_loader):
