@@ -54,10 +54,13 @@ class Client(Device):
     self.c_round = c_round
     #copy(target=self.W, source=server.W)
     
-  def compute_weight_update(self, epochs=1, loader=None, reset_optimizer=False):
+  def compute_weight_update(self, epochs=1, loader=None, reset_optimizer=False, train_oulier_model=False):
     if reset_optimizer:
       self.optimizer = self.optimizer_fn(self.model.parameters())  
-    train_stats = train_op_with_score(self.model, self.loader if not loader else loader, self.public_loader, self.optimizer, self.scheduler, epochs)
+    if train_oulier_model:
+      train_stats = train_op_with_score(self.model, self.loader if not loader else loader, self.public_loader, self.optimizer, self.scheduler, epochs)
+    else:
+      train_stats = train_op(self.model, self.loader if not loader else loader, self.optimizer, self.scheduler, epochs)
     #print(self.label_counts)
     #eval_scores(self.model, self.distill_loader)
     return train_stats
