@@ -141,8 +141,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
-data
-.idea
-node_modules
-
