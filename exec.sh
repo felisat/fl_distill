@@ -21,14 +21,14 @@ hyperparameters=' [{
 
 
 	"communication_rounds" : [50],
-	"participation_rate" : [0.4, 1.0],
+	"participation_rate" : [0.4],
 	"local_epochs" : [10],
 	"distill_epochs" : [3],
 	"n_distill" : [50000], 
 
 	
 	"batch_size" : [128],
-	"aggregation_mode" : ["FAD+S", "FedAUX"],
+	"aggregation_mode" : ["FAD+S"],
 	"outlier_model" : [["ocsvm", {"gamma" : 0.03125}]],
 	
 
@@ -36,7 +36,7 @@ hyperparameters=' [{
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["deep_ano/"],
+	"log_path" : ["trash/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
