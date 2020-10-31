@@ -27,6 +27,14 @@ class VGG(nn.Module):
             nn.ReLU(True),
             nn.Linear(size, out),
         )
+
+        self.binary = nn.Sequential(
+            #nn.Dropout(),
+            nn.Linear(size, size),
+            nn.ReLU(True),
+            #nn.Dropout(),
+            nn.Linear(size, 2),
+        )
          # Initialize weights
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -39,6 +47,12 @@ class VGG(nn.Module):
         x = self.features(x)
         x = x.view(x.size(0), -1)
         x = self.classifier(x)
+        return x
+
+    def forward_binary(self, x):
+        x = self.features(x)
+        x = x.view(x.size(0), -1)
+        x = self.binary(x)
         return x
 
     def make_layers(self, cfg, batch_norm=False):

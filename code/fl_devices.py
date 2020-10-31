@@ -281,7 +281,7 @@ def train_op_with_score(model, loader, public_loader, optimizer, scheduler, epoc
         classification_loss = nn.CrossEntropyLoss()(model(x), y)
 
         p = torch.nn.Softmax(1)(model.forward_binary(x_joined))
-        ent = -torch.mean(torch.sum(p * torch.log(p), dim=1))
+        ent = -torch.mean(torch.sum(p * torch.log(p.clamp_min(1e-7)), dim=1))
         
         outlier_loss = nn.CrossEntropyLoss()(model.forward_binary(x_joined), y_joined)
 
