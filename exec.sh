@@ -12,7 +12,7 @@ cmdargs=$1
 hyperparameters=' [{
 	"dataset" : ["cifar10"], 
 	"distill_dataset" : ["stl10"],
-	"net" : ["vgg11s"],
+	"net" : ["resnet8_bn"],
 	
 
 	"n_clients" : [20],
@@ -28,14 +28,14 @@ hyperparameters=' [{
 
 	
 	"batch_size" : [128],
-	"aggregation_mode" : ["FAD+S"],
+	"aggregation_mode" : ["FA", "FAD", "FAD+S"],
 	
 
 	"pretrained" : ["simclr_resnet8_stl10_100epochs.pth"],
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["sanity_check_vgg11/"],
+	"log_path" : ["sanity_check_resnet/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
