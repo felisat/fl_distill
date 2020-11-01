@@ -56,11 +56,11 @@ class Client(Device):
     self.c_round = c_round
     #copy(target=self.W, source=server.W)
     
-  def compute_weight_update(self, epochs=1, loader=None, reset_optimizer=False, train_oulier_model=False):
+  def compute_weight_update(self, epochs=1, loader=None, reset_optimizer=False, train_oulier_model=False, lambda_outlier=0.1, lambda_ent=0.0):
     if reset_optimizer:
       self.optimizer = self.optimizer_fn(self.model.parameters())  
     if train_oulier_model:
-      train_stats = train_op_with_score(self.model, self.loader if not loader else loader, self.public_loader, self.optimizer, self.scheduler, epochs)
+      train_stats = train_op_with_score(self.model, self.loader if not loader else loader, self.public_loader, self.optimizer, self.scheduler, epochs, lambda_outlier, lambda_ent)
     else:
       train_stats = train_op(self.model, self.loader if not loader else loader, self.optimizer, self.scheduler, epochs)
     #print(self.label_counts)
@@ -265,7 +265,7 @@ def train_op(model, loader, optimizer, scheduler, epochs):
 
 
 
-def train_op_with_score(model, loader, public_loader, optimizer, scheduler, epochs):
+def train_op_with_score(model, loader, public_loader, optimizer, scheduler, epochs, lambda_outlier=0.1, lambda_ent=0.0):
     model.train()  
     running_loss, running_class, running_ent, running_binary, samples = 0.0, 0.0, 0.0, 0.0, 0
     for ep in range(epochs):
@@ -285,7 +285,7 @@ def train_op_with_score(model, loader, public_loader, optimizer, scheduler, epoc
         
         outlier_loss = nn.CrossEntropyLoss()(model.forward_binary(x_joined), y_joined)
 
-        loss =  0.1 * outlier_loss + classification_loss #+ ent # 
+        loss =  classification_loss + lambda_outlier * outlier_loss + lambda_ent * ent  
 
         running_loss += loss.item()*y.shape[0]
         running_ent += ent.item()*y.shape[0]

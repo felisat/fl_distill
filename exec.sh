@@ -16,26 +16,26 @@ hyperparameters=' [{
 	
 
 	"n_clients" : [20],
-	"classes_per_client" : [1.0, 0.01],
+	"classes_per_client" : [100.0, 1.0, 0.1, 0.01],
 	"balancedness" : [1.0],
 
 
 	"communication_rounds" : [50],
 	"participation_rate" : [0.4],
-	"local_epochs" : [20],
+	"local_epochs" : [1, 5],
 	"distill_epochs" : [1],
 	"n_distill" : [80000], 
 
 	
 	"batch_size" : [128],
-	"aggregation_mode" : ["FA"],
+	"aggregation_mode" : ["FA", "FAD", "FAD+S"],
 	
 
 	"pretrained" : ["simclr_resnet8_stl10_100epochs.pth"],
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["sanity_check_vgg11/"],
+	"log_path" : ["sanity_check_vgg11_local_epochs/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
