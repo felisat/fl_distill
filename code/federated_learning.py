@@ -77,6 +77,7 @@ def run_experiment(xp, xp_count, n_experiments):
       client.train_outlier_detector(hp["outlier_model"][0], distill_loader, **hp["outlier_model"][1])
   """
 
+  averaging_stats = {"accuracy" : 0.0}
   models.print_model(server.model)
 
   # Start Distributed Training Process
