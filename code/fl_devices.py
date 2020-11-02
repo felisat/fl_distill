@@ -162,7 +162,7 @@ class Server(Device):
     reduce_average(target=self.W, sources=[client.W for client in clients])
 
 
-  def distill(self, clients, epochs=1, mode="regular", reset_optimizer=False, acc0=0.0):
+  def distill(self, clients, epochs=1, mode="mean_probs", reset_optimizer=False, acc0=0.0, fallback=True):
     print("Distilling...")
     if reset_optimizer:
       self.optimizer = self.optimizer_fn(self.model.parameters())   
@@ -235,10 +235,10 @@ class Server(Device):
         self.optimizer.step()  
 
 
-      acc_new = eval_op(self.model, self.loader)["accuracy"]
-      print(acc_new)
-      if acc_new < acc0:
-        self.aggregate_weight_updates(clients)
+    acc_new = eval_op(self.model, self.loader)["accuracy"]
+    print(acc_new)
+    if fallback and acc_new < acc0:
+      self.aggregate_weight_updates(clients)
 
     return {"loss" : running_loss / samples, "acc" : acc_new, "epochs" : ep}
 

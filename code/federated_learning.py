@@ -38,23 +38,25 @@ def run_experiment(xp, xp_count, n_experiments):
   np.random.seed(0)
   # What fraction of the unlabeled data should be used for training the anomaly detector
   distill_data = data.IdxSubset(all_distill_data, np.random.permutation(len(all_distill_data))[:hp["n_distill"]]) # data used for distillation
-  public_data = data.IdxSubset(all_distill_data, np.random.permutation(len(all_distill_data))[hp["n_distill"]:len(all_distill_data)]) # data used to train the outlier detector
+  distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=True)
+
+  if hp["aggregation_mode"] in ["FAD+S", "FAD+P+S"]:
+    public_data = data.IdxSubset(all_distill_data, np.random.permutation(len(all_distill_data))[hp["n_distill"]:len(all_distill_data)]) # data used to train the outlier detector
+    public_loader = torch.utils.data.DataLoader(public_data, batch_size=128, shuffle=True)
 
   #print(len(distill_data), len(public_data))
 
   client_loaders, test_loader, label_counts = data.get_loaders(train_data, test_data, n_clients=hp["n_clients"], 
         classes_per_client=hp["classes_per_client"], batch_size=hp["batch_size"], n_data=None)
-  distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=True)
-  public_loader = torch.utils.data.DataLoader(public_data, batch_size=128, shuffle=True)
 
   clients = [Client(model_fn, optimizer_fn, loader, idnum=i) for i, loader in enumerate(client_loaders)]
-  server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=0.001), test_loader, distill_loader)
+  server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=2e-3), test_loader, distill_loader)
 
   for client, counts in zip(clients, label_counts):
     client.label_counts = counts
-    client.public_loader = public_loader
     client.distill_loader = distill_loader
-
+    if hp["aggregation_mode"] in ["FAD+S", "FAD+P+S"]:
+      client.public_loader = public_loader
 
   # Modes that use pretrained representation 
   if hp["aggregation_mode"] in ["FAD+P", "FAD+P+S"]:
@@ -104,7 +106,7 @@ def run_experiment(xp, xp_count, n_experiments):
     
     if hp["aggregation_mode"] in ["FD", "FAD", "FAD+P", "FAD+S", "FAD+P+S"]:
 
-      distll_mode = "probs_weighted_with_deep_outlier_score" if hp["aggregation_mode"] in ["FAD+S", "FAD+P+S"] else "mean_probs"
+      distll_mode = "logits_weighted_with_deep_outlier_score" if hp["aggregation_mode"] in ["FAD+S", "FAD+P+S"] else "mean_logits"
       distill_stats = server.distill(participating_clients, hp["distill_epochs"], mode=distll_mode, acc0=averaging_stats["accuracy"])
       xp.log({"distill_{}".format(key) : value for key, value in distill_stats.items()})
 
