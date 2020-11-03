@@ -60,9 +60,11 @@ def get_cifar100(path):
                                                                (0.2023, 0.1994, 0.2010))
                                           ])
   train_data = torchvision.datasets.CIFAR100(root=path+"CIFAR100", train=True, download=True, transform=transforms)
-  #test_data = torchvision.datasets.CIFAR10(root=path+"CIFAR", train=False, download=True, transform=transforms)
+  test_data = torchvision.datasets.CIFAR100(root=path+"CIFAR100", train=False, download=True, transform=transforms)
 
-  return train_data#, test_data
+  all_data = torch.utils.data.ConcatDataset([train_data, test_data])
+
+  return all_data
 
 
 def get_stl10(path):

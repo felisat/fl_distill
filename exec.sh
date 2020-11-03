@@ -11,31 +11,32 @@ cmdargs=$1
 
 hyperparameters=' [{
 	"dataset" : ["cifar10"], 
-	"distill_dataset" : ["cifar100", "STL10"],
+	"distill_dataset" : ["cifar100"],
 	"net" : ["resnet8_bn"],
 	
 
 	"n_clients" : [20],
-	"classes_per_client" : [100.0],
+	"classes_per_client" : [100.0, 0.01],
 	"balancedness" : [1.0],
 
 
-	"communication_rounds" : [50],
+	"communication_rounds" : [100],
 	"participation_rate" : [0.4],
 	"local_epochs" : [20],
-	"distill_epochs" : [1, 3, 5],
-	"n_distill" : [100000], 
+	"distill_epochs" : [1],
+	"n_distill" : [50000], 
+	"fallback" : [true, false],
 
 	
 	"batch_size" : [128],
-	"aggregation_mode" : ["FAD"],
+	"aggregation_mode" : ["FAD+P+S"],
 	
 
 	"pretrained" : ["simclr_resnet8_stl10_100epochs.pth"],
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["sanity_check_FAD/"],
+	"log_path" : ["experiment_100ep/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
