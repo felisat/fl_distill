@@ -45,13 +45,8 @@ def run_experiment(xp, xp_count, n_experiments):
   distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=True)
   public_loader = torch.utils.data.DataLoader(public_data, batch_size=128, shuffle=True)
 
-  clients = [Client(model_fn, optimizer_fn, loader, idnum=i) for i, loader in enumerate(client_loaders)]
+  clients = [Client(model_fn, optimizer_fn, loader, idnum=i, counts=counts, public_loader=public_loader, distill_loader=distill_loader) for i, (loader , counts) in enumerate(zip(client_loaders, label_counts))]
   server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=2e-3), test_loader, distill_loader)
-
-  for client, counts in zip(clients, label_counts):
-    client.label_counts = counts
-    client.public_loader = public_loader
-    client.distill_loader = distill_loader
 
 
   # Modes that use pretrained representation 
@@ -90,7 +85,8 @@ def run_experiment(xp, xp_count, n_experiments):
     for client in tqdm(participating_clients):
       client.synchronize_with_server(server, c_round)
 
-      train_stats = client.compute_weight_update(hp["local_epochs"], train_oulier_model=hp["aggregation_mode"] in ["FAD+S", "FAD+P+S"], **hp) 
+      train_stats = client.compute_weight_update(hp["local_epochs"], train_oulier_model=hp["aggregation_mode"] in ["FAD+S", "FAD+P+S"], c_round=c_round,
+                max_c_round=hp["communication_rounds"], **hp) 
       print(train_stats)
 
     if hp["aggregation_mode"] in ["FA", "FAD", "FAD+P", "FAD+S", "FAD+P+S"]:

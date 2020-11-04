@@ -46,11 +46,13 @@ class Device(object):
     
       
 class Client(Device):
-  def __init__(self, model_fn, optimizer_fn, loader, init=None, idnum=None):
+  def __init__(self, model_fn, optimizer_fn, loader, counts, public_loader, distill_loader, init=None, idnum=None):
     super().__init__(model_fn, optimizer_fn, loader, init)
     self.id = idnum
     self.feature_extractor = None
-    
+    self.loader['public'] = public_loader
+    self.distill_loader = distill_loader
+
   def synchronize_with_server(self, server, c_round):
     self.model.load_state_dict(server.model.state_dict(), strict=False)
     self.c_round = c_round
@@ -60,7 +62,7 @@ class Client(Device):
     if reset_optimizer:
       self.optimizer = self.optimizer_fn(self.model.parameters())  
     if train_oulier_model:
-      train_stats = train_op_with_score(self.model, self.loader if not loader else loader, self.public_loader, self.optimizer, self.scheduler, epochs, **kwargs)
+      train_stats = train_op_with_score(self.model, self.loader if not loader else loader, self.optimizer, self.scheduler, epochs, **kwargs)
     else:
       train_stats = train_op(self.model, self.loader if not loader else loader, self.optimizer, self.scheduler, epochs)
     #print(self.label_counts)
@@ -174,7 +176,7 @@ class Server(Device):
     acc = 0
     for ep in range(epochs):
       running_loss, samples = 0.0, 0
-      for (x, _), idx in tqdm(self.distill_loader):   
+      for x,_, idx in tqdm(self.distill_loader):   
         x = x.to(device)     
 
         if mode == "mean_probs":
@@ -247,7 +249,7 @@ def train_op(model, loader, optimizer, scheduler, epochs):
     model.train()  
     running_loss, samples = 0.0, 0
     for ep in range(epochs):
-      for x, y, source in loader:   
+      for x, y, source, index in loader:   
         x, y = x.to(device), y.to(device)
         
         optimizer.zero_grad()
@@ -264,11 +266,11 @@ def train_op(model, loader, optimizer, scheduler, epochs):
 
 
 
-def train_op_with_score(model, loader, public_loader, optimizer, scheduler, epochs, **kwargs):
+def train_op_with_score(model, loader, optimizer, scheduler, epochs, **kwargs):
     model.train()  
     running_loss, running_class, running_ent, running_binary, samples = 0.0, 0.0, 0.0, 0.0, 0
     for ep in range(epochs):
-      for x, y, source in loader:   
+      for x, y, source, index in loader:   
         x, y, source = x.to(device), y.to(device), source.to(device).long()
 
         optimizer.zero_grad()
@@ -280,7 +282,7 @@ def train_op_with_score(model, loader, public_loader, optimizer, scheduler, epoc
         
         outlier_loss = nn.CrossEntropyLoss()(model.forward_binary(x), source)
 
-        loss =  outlier_loss + classification_loss #+ ent # 
+        loss =  kwargs["distill_weight"] * warmup(kwargs["c_round"], kwargs["max_c_round"], type=kwargs["warmup_type"]) * outlier_loss + classification_loss #+ ent # 
 
         running_loss += loss.item()*y.shape[0]
         running_ent += ent.item()*y.shape[0]
@@ -315,7 +317,7 @@ def eval_op(model, loader):
     samples, correct = 0, 0
 
     with torch.no_grad():
-      for i, (x, y, source) in enumerate(loader):
+      for i, (x, y, source, index) in enumerate(loader):
         x, y = x.to(device), y.to(device)
 
         y_ = model(x)
@@ -326,7 +328,11 @@ def eval_op(model, loader):
 
     return {"accuracy" : correct/samples}
 
-
+def warmup(curr, max, type="constant"):
+    if type == "constant":
+        return 1
+    elif type == "tanh":
+        return np.tanh(curr / (0.5 * max))
 
 def flatten(source):
   return torch.cat([value.flatten() for value in source.values()])
@@ -342,8 +348,6 @@ def reduce_average(target, sources):
 def subtract_(target, minuend, subtrahend):
   for name in target:
     target[name].data = minuend[name].detach().clone()-subtrahend[name].detach().clone()
-
-
 
 def sigmoid(x):
   return np.exp(x)/(1+np.exp(x))

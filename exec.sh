@@ -10,25 +10,28 @@
 cmdargs=$1
 
 hyperparameters=' [{
-	"dataset" : ["mnist"], 
-	"distill_dataset" : ["emnist"],
-	"net" : ["lenet_mnist"],
+	"dataset" : ["cifar10"], 
+	"distill_dataset" : ["stl10"],
+	"net" : ["resnet8_bn"],
 	
 
-	"n_clients" : [5],
+	"n_clients" : [20],
 	"classes_per_client" : [0.01],
 	"balancedness" : [1.0],
 
 
-	"communication_rounds" : [5],
+	"communication_rounds" : [20],
 	"participation_rate" : [0.4],
-	"local_epochs" : [2],
-	"distill_epochs" : [2],
-	"n_distill" : [50000], 
+	"local_epochs" : [20],
+	"distill_epochs" : [10],
+	"n_distill" : [50000],
 
+	"warmup_type": ["tanh"],
+	"local_data_percentage" : [1.0],
+	"distill_weight": [1],
 	
 	"batch_size" : [128],
-	"aggregation_mode" : ["FAD+S"],
+	"aggregation_mode" : ["FAD+P+S"],
 	"outlier_model" : [["ocsvm", {"gamma" : 0.03125}]],
 	
 

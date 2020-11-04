@@ -1,5 +1,8 @@
 import torch, torchvision
 import numpy as np
+import copy
+
+from itertools import cycle
 
 def get_mnist(path):
   transforms = torchvision.transforms.Compose([ torchvision.transforms.Resize((32,32)),
@@ -19,7 +22,7 @@ def get_emnist(path):
                                                 AddChannels()
                                                 #torchvision.transforms.Normalize((0.1307,), (0.3081,))])
                                                 ])
-  data = torchvision.datasets.EMNIST(root=path, split="byclass", download=False, transform=transforms)
+  data = torchvision.datasets.EMNIST(root=path, split="byclass", download=True, transform=transforms)
   #test_data = torchvision.datasets.MNIST(root=path+"EMNIST", train=False, download=True, transform=transforms)
 
   return data
@@ -97,10 +100,12 @@ def get_loaders(train_data, test_data, n_clients=10, classes_per_client=0, batch
   subset_idcs = split_dirichlet(train_data.targets, n_clients, n_data, classes_per_client)
   client_data = [torch.utils.data.Subset(train_data, subset_idcs[i]) for i in range(n_clients)]
 
+  client_data = [IdxSubset(train_data, subset_idcs[i]) for i in range(n_clients)]
+
   label_counts = [np.bincount(np.array(train_data.targets)[i], minlength=10) for i in subset_idcs]
 
   client_loaders = [torch.utils.data.DataLoader(subset, batch_size=batch_size, shuffle=True) for subset in client_data]
-  test_loader = torch.utils.data.DataLoader(test_data, batch_size=100)
+  test_loader = torch.utils.data.DataLoader(IdxSubset(test_data, list(range(len(test_data)))), batch_size=100)
 
   return client_loaders, test_loader, label_counts
 
@@ -224,10 +229,13 @@ class IdxSubset(torch.utils.data.Dataset):
         self.indices = indices
 
     def __getitem__(self, idx):
-        return self.dataset[self.indices[idx]], idx
+        return *self.dataset[self.indices[idx]], idx
 
     def __len__(self):
         return len(self.indices)
+
+    def __copy__(self):
+      return 
 
 class DataloaderMerger(object):
     def __init__(self, loaders):
@@ -252,26 +260,30 @@ class DataloaderMerger(object):
 
         self.iters = [iter(self.loaders["base"])]
         self.iters += [
-            loop(iter(self.loaders[loader_name]))
+            loop(self.loaders[loader_name])
             for loader_name in self.loaders.keys()
             if loader_name != "base"
         ]
         return self
 
+    def __len__(self):
+      return sum(1 for _ in self)
+
     def __next__(self):
-        try:
-            x, y, source = None, None, None
-            if len(self.iters) > 1:
-                x, y = zip(*(next(iterator) for iterator in self.iters))
-                source = torch.cat(
-                    [i * torch.ones(subbatch.size(0)) for i, subbatch in enumerate(x)]
-                )
-                x = torch.cat(x)
-                y = torch.cat(y)
-            else:
-                x, y = next(self.iters[0])
-                source = torch.zeros(x.size(0))
-            return x, y, source
-        except:
-            raise StopIteration
+      try:
+        x, y, source, index = None, None, None, None
+        if len(self.iters) > 1:
+            x, y, index = zip(*(next(iterator) for iterator in self.iters))
+            source = torch.cat(
+                [i * torch.ones(subbatch.size(0)) for i, subbatch in enumerate(x)]
+            )
+            x = torch.cat(x)
+            y = torch.cat(y)
+            index = torch.cat(index)
+        else:
+            x, y, index = next(self.iters[0])
+            source = torch.zeros(x.size(0))
+        return x, y, source, index
+      except:
+        raise StopIteration
 
