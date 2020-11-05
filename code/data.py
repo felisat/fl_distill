@@ -257,7 +257,7 @@ class DataMerger(object):
       self.loaders = {}
       coeffs = self.mixture_coefficients(c_round)
       for key in self.used_data_sources:
-        self.loaders[key] = DataLoader(self.datasets[key], batch_size=int(coeffs[key]*self.kwargs["batch_size"]), shuffle=True)
+        self.loaders[key] = DataLoader(self.datasets[key], batch_size=int(coeffs[key]*self.kwargs["batch_size"]), shuffle=True, pin_memory=True)
       
 
     def __setitem__(self, key, value):

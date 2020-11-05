@@ -50,7 +50,6 @@ class Client(Device):
     self.id = idnum
     self.feature_extractor = None
     self.distill_loader = distill_loader
-    print(len(self.loader))
 
   def synchronize_with_server(self, server, c_round):
     self.model.load_state_dict(server.model.state_dict(), strict=False)

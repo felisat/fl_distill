@@ -27,10 +27,10 @@ hyperparameters=' [{
 	"n_distill" : [50000],
 
 	"warmup_type": ["constant"],
-	"mixture_coefficients" : [{"base":0.25, "public":0.75}],
+	"mixture_coefficients" : [{"base":0.5, "public":0.5}],
 	"distill_weight": [1],
 	
-	"batch_size" : [512],
+	"batch_size" : [256],
 	"aggregation_mode" : ["FAD+P+S"],
 	"outlier_model" : [["ocsvm", {"gamma" : 0.03125}]],
 	
