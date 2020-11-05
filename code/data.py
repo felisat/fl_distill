@@ -1,5 +1,10 @@
 import torch, torchvision
 import numpy as np
+import copy
+
+from torch.utils.data import DataLoader
+
+from itertools import cycle
 
 def get_mnist(path):
   transforms = torchvision.transforms.Compose([ torchvision.transforms.Resize((32,32)),
@@ -19,7 +24,7 @@ def get_emnist(path):
                                                 AddChannels()
                                                 #torchvision.transforms.Normalize((0.1307,), (0.3081,))])
                                                 ])
-  data = torchvision.datasets.EMNIST(root=path, split="byclass", download=False, transform=transforms)
+  data = torchvision.datasets.EMNIST(root=path, split="byclass", download=True, transform=transforms)
   #test_data = torchvision.datasets.MNIST(root=path+"EMNIST", train=False, download=True, transform=transforms)
 
   return data
@@ -94,17 +99,12 @@ def get_svhn(path):
 def get_data(dataset, path):
   return {"cifar10" : get_cifar10, "mnist" : get_mnist, "emnist" : get_emnist,"stl10" : get_stl10, "svhn" : get_svhn, "cifar100" : get_cifar100, "cifar_distill" : get_cifar_distill}[dataset](path)
 
-def get_loaders(train_data, test_data, n_clients=10, classes_per_client=0, batch_size=128, n_data=None):
-
+def get_client_data(train_data, n_clients=10, classes_per_client=0, n_data=None):
   subset_idcs = split_dirichlet(train_data.targets, n_clients, n_data, classes_per_client)
-  client_data = [torch.utils.data.Subset(train_data, subset_idcs[i]) for i in range(n_clients)]
-
   label_counts = [np.bincount(np.array(train_data.targets)[i], minlength=10) for i in subset_idcs]
+  client_data = [IdxSubset(train_data, subset_idcs[i]) for i in range(n_clients)]
 
-  client_loaders = [torch.utils.data.DataLoader(subset, batch_size=batch_size, shuffle=True) for subset in client_data]
-  test_loader = torch.utils.data.DataLoader(test_data, batch_size=100)
-
-  return client_loaders, test_loader, label_counts
+  return client_data, label_counts
 
 
 
@@ -226,8 +226,78 @@ class IdxSubset(torch.utils.data.Dataset):
         self.indices = indices
 
     def __getitem__(self, idx):
-        return self.dataset[self.indices[idx]], idx
+        return *self.dataset[self.indices[idx]], idx
 
     def __len__(self):
         return len(self.indices)
 
+class DataMerger(object):
+    def __init__(self, datasets, **kwargs):
+        assert isinstance(datasets, dict) and (
+            "base" in datasets.keys()
+        ), 'Please initialize the DataloaderMerger with a dict of names and dataloaders and atleast one loader called "base"'
+
+        self.datasets = datasets
+        self.kwargs = kwargs
+        self.used_data_sources = list(datasets.keys())
+
+        if callable(kwargs["mixture_coefficients"]):
+          self.mixture_coefficients = kwargs["mixture_coefficients"]
+        elif isinstance(kwargs["mixture_coefficients"], dict) and sum(kwargs["mixture_coefficients"].values()) == 1:
+          self.mixture_coefficients = lambda x: kwargs["mixture_coefficients"]
+        elif mixture_coefficients == 'linear':
+          self.mixture_coefficients = lambda x: {'base': 1 - x/(kwargs['communication_rounds']), 'public': x/(kwargs['communication_rounds'])}
+        else:
+          raise NotImplementedError('mixture_coefficients must be function or static distribution')
+
+        self.update(c_round=0)
+
+    def update(self, c_round=0):
+      self.loaders = {}
+      coeffs = self.mixture_coefficients(c_round)
+      for key in self.used_data_sources:
+        self.loaders[key] = DataLoader(self.datasets[key], batch_size=int(coeffs[key]*self.kwargs["batch_size"]), shuffle=True, pin_memory=True)
+      
+
+    def __setitem__(self, key, value):
+        self.loaders[key] = value
+
+    def __iter__(self):
+        def loop(iterable):
+            it = iterable.__iter__()
+
+            while True:
+                try:
+                    yield it.next()
+                except StopIteration:
+                    it = iterable.__iter__()
+                    yield it.next()
+
+        self.iters = [iter(self.loaders["base"])]
+        self.iters += [
+            loop(self.loaders[loader_name])
+            for loader_name in self.loaders.keys()
+            if loader_name != "base"
+        ]
+        return self
+
+    def __len__(self):
+      return sum(1 for _ in self)
+
+    def __next__(self):
+      try:
+        x, y, source, index = None, None, None, None
+        if len(self.iters) > 1:
+            x, y, index = zip(*(next(iterator) for iterator in self.iters))
+            source = torch.cat(
+                [i * torch.ones(subbatch.size(0)) for i, subbatch in enumerate(x)]
+            )
+            x = torch.cat(x)
+            y = torch.cat(y)
+            index = torch.cat(index)
+        else:
+            x, y, index = next(self.iters[0])
+            source = torch.zeros(x.size(0))
+        return x, y, source, index
+      except:
+        raise StopIteration

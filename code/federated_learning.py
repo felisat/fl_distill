@@ -2,11 +2,11 @@ import os, argparse, json, copy, time
 from tqdm import tqdm
 import torch, torchvision
 import numpy as np
+from torch.utils.data import DataLoader
 
 import data, models 
 import experiment_manager as xpm
 from fl_devices import Client, Server
-
 
 np.set_printoptions(precision=4, suppress=True)
 
@@ -46,17 +46,16 @@ def run_experiment(xp, xp_count, n_experiments):
 
   print(len(distill_data), len(public_data))
 
-  client_loaders, test_loader, label_counts = data.get_loaders(train_data, test_data, n_clients=hp["n_clients"], 
-        classes_per_client=hp["classes_per_client"], batch_size=hp["batch_size"], n_data=None)
+  client_data, label_counts = data.get_client_data(train_data, n_clients=hp["n_clients"], 
+        classes_per_client=hp["classes_per_client"])
 
-  clients = [Client(model_fn, optimizer_fn, loader, idnum=i) for i, loader in enumerate(client_loaders)]
+  client_loaders = [data.DataMerger({'base': local_data, 'public': public_data}, **hp) for local_data in client_data]
+
+  test_loader = data.DataMerger({'base': data.IdxSubset(test_data, list(range(len(test_data))))}, mixture_coefficients={'base':1}, batch_size=100)
+  distill_loader = DataLoader(distill_data, batch_size=128, shuffle=True)
+
+  clients = [Client(model_fn, optimizer_fn, loader, idnum=i, counts=counts, distill_loader=distill_loader) for i, (loader , counts) in enumerate(zip(client_loaders, label_counts))]
   server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=2e-3), test_loader, distill_loader)
-
-  for client, counts in zip(clients, label_counts):
-    client.label_counts = counts
-    client.distill_loader = distill_loader
-    if hp["aggregation_mode"] in ["FAD+S", "FAD+P+S"]:
-      client.public_loader = public_loader
 
   # Modes that use pretrained representation 
   if hp["aggregation_mode"] in ["FAD+P", "FAD+P+S"]:
@@ -95,7 +94,8 @@ def run_experiment(xp, xp_count, n_experiments):
     for client in tqdm(participating_clients):
       client.synchronize_with_server(server, c_round)
 
-      train_stats = client.compute_weight_update(hp["local_epochs"], train_oulier_model=hp["aggregation_mode"] in ["FAD+S", "FAD+P+S"]) 
+      train_stats = client.compute_weight_update(hp["local_epochs"], train_oulier_model=hp["aggregation_mode"] in ["FAD+S", "FAD+P+S"], c_round=c_round,
+                max_c_round=hp["communication_rounds"], **hp) 
       print(train_stats)
 
     if hp["aggregation_mode"] in ["FA", "FAD", "FAD+P", "FAD+S", "FAD+P+S"]:
