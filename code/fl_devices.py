@@ -7,7 +7,6 @@ import torch.nn as nn
 import numpy as np 
 
 from models import outlier_net
-from data import DataloaderMerger
 
 from virtual_adversarial_training import VATLoss
 
@@ -17,9 +16,9 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
 
 class Device(object):
-  def __init__(self, model_fn, optimizer_fn, loader, init=None):
+  def __init__(self, model_fn, optimizer_fn, loader,client_data=None, init=None, **kwargs):
     self.model = model_fn().to(device)
-    self.loader = DataloaderMerger({"base": loader})
+    self.loader = loader
 
     self.W = {key : value for key, value in self.model.named_parameters()}
     self.dW = {key : torch.zeros_like(value) for key, value in self.model.named_parameters()}
@@ -46,16 +45,19 @@ class Device(object):
     
       
 class Client(Device):
-  def __init__(self, model_fn, optimizer_fn, loader, counts, public_loader, distill_loader, init=None, idnum=None):
+  def __init__(self, model_fn, optimizer_fn, loader, counts, distill_loader, init=None, idnum=None):
     super().__init__(model_fn, optimizer_fn, loader, init)
     self.id = idnum
     self.feature_extractor = None
-    self.loader['public'] = public_loader
     self.distill_loader = distill_loader
+    print(len(self.loader))
 
   def synchronize_with_server(self, server, c_round):
     self.model.load_state_dict(server.model.state_dict(), strict=False)
     self.c_round = c_round
+
+    # update data loader subbatch distribution
+    self.loader.update(c_round=c_round)
     #copy(target=self.W, source=server.W)
     
   def compute_weight_update(self, epochs=1, loader=None, reset_optimizer=False, train_oulier_model=False, **kwargs):
@@ -67,6 +69,7 @@ class Client(Device):
       train_stats = train_op(self.model, self.loader if not loader else loader, self.optimizer, self.scheduler, epochs)
     #print(self.label_counts)
     #eval_scores(self.model, self.distill_loader)
+
     return train_stats
 
 

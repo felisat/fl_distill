@@ -2,11 +2,11 @@ import os, argparse, json, copy, time
 from tqdm import tqdm
 import torch, torchvision
 import numpy as np
+from torch.utils.data import DataLoader
 
 import data, models 
 import experiment_manager as xpm
 from fl_devices import Client, Server
-
 
 np.set_printoptions(precision=4, suppress=True)
 
@@ -40,12 +40,15 @@ def run_experiment(xp, xp_count, n_experiments):
   distill_data = data.IdxSubset(all_distill_data, np.random.permutation(len(all_distill_data))[:hp["n_distill"]]) # data used for distillation
   public_data = data.IdxSubset(all_distill_data, np.random.permutation(len(all_distill_data))[hp["n_distill"]:len(all_distill_data)]) # data used to train the outlier detector
 
-  client_loaders, test_loader, label_counts = data.get_loaders(train_data, test_data, n_clients=hp["n_clients"], 
-        classes_per_client=hp["classes_per_client"], batch_size=hp["batch_size"], n_data=None)
-  distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=True)
-  public_loader = torch.utils.data.DataLoader(public_data, batch_size=128, shuffle=True)
+  client_data, label_counts = data.get_client_data(train_data, n_clients=hp["n_clients"], 
+        classes_per_client=hp["classes_per_client"])
 
-  clients = [Client(model_fn, optimizer_fn, loader, idnum=i, counts=counts, public_loader=public_loader, distill_loader=distill_loader) for i, (loader , counts) in enumerate(zip(client_loaders, label_counts))]
+  client_loaders = [data.DataMerger({'base': local_data, 'public': public_data}, **hp) for local_data in client_data]
+
+  test_loader = data.DataMerger({'base': data.IdxSubset(test_data, list(range(len(test_data))))}, mixture_coefficients={'base':1}, batch_size=100)
+  distill_loader = DataLoader(distill_data, batch_size=128, shuffle=True)
+
+  clients = [Client(model_fn, optimizer_fn, loader, idnum=i, counts=counts, distill_loader=distill_loader) for i, (loader , counts) in enumerate(zip(client_loaders, label_counts))]
   server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=2e-3), test_loader, distill_loader)
 
 

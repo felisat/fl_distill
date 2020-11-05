@@ -26,11 +26,11 @@ hyperparameters=' [{
 	"distill_epochs" : [10],
 	"n_distill" : [50000],
 
-	"warmup_type": ["tanh"],
-	"local_data_percentage" : [1.0],
+	"warmup_type": ["constant"],
+	"mixture_coefficients" : [{"base":0.25, "public":0.75}],
 	"distill_weight": [1],
 	
-	"batch_size" : [128],
+	"batch_size" : [512],
 	"aggregation_mode" : ["FAD+P+S"],
 	"outlier_model" : [["ocsvm", {"gamma" : 0.03125}]],
 	

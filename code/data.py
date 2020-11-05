@@ -2,6 +2,8 @@ import torch, torchvision
 import numpy as np
 import copy
 
+from torch.utils.data import DataLoader
+
 from itertools import cycle
 
 def get_mnist(path):
@@ -95,19 +97,12 @@ def get_svhn(path):
 def get_data(dataset, path):
   return {"cifar10" : get_cifar10, "mnist" : get_mnist, "emnist" : get_emnist,"stl10" : get_stl10, "svhn" : get_svhn, "cifar100" : get_cifar100, "cifar_distill" : get_cifar_distill}[dataset](path)
 
-def get_loaders(train_data, test_data, n_clients=10, classes_per_client=0, batch_size=128, n_data=None):
-
+def get_client_data(train_data, n_clients=10, classes_per_client=0, n_data=None):
   subset_idcs = split_dirichlet(train_data.targets, n_clients, n_data, classes_per_client)
-  client_data = [torch.utils.data.Subset(train_data, subset_idcs[i]) for i in range(n_clients)]
-
+  label_counts = [np.bincount(np.array(train_data.targets)[i], minlength=10) for i in subset_idcs]
   client_data = [IdxSubset(train_data, subset_idcs[i]) for i in range(n_clients)]
 
-  label_counts = [np.bincount(np.array(train_data.targets)[i], minlength=10) for i in subset_idcs]
-
-  client_loaders = [torch.utils.data.DataLoader(subset, batch_size=batch_size, shuffle=True) for subset in client_data]
-  test_loader = torch.utils.data.DataLoader(IdxSubset(test_data, list(range(len(test_data)))), batch_size=100)
-
-  return client_loaders, test_loader, label_counts
+  return client_data, label_counts
 
 
 
@@ -237,12 +232,33 @@ class IdxSubset(torch.utils.data.Dataset):
     def __copy__(self):
       return 
 
-class DataloaderMerger(object):
-    def __init__(self, loaders):
-        assert isinstance(loaders, dict) and (
-            "base" in loaders.keys()
+class DataMerger(object):
+    def __init__(self, datasets, **kwargs):
+        assert isinstance(datasets, dict) and (
+            "base" in datasets.keys()
         ), 'Please initialize the DataloaderMerger with a dict of names and dataloaders and atleast one loader called "base"'
-        self.loaders = loaders
+
+        self.datasets = datasets
+        self.kwargs = kwargs
+        self.used_data_sources = list(datasets.keys())
+
+        if callable(kwargs["mixture_coefficients"]):
+          self.mixture_coefficients = kwargs["mixture_coefficients"]
+        elif isinstance(kwargs["mixture_coefficients"], dict) and sum(kwargs["mixture_coefficients"].values()) == 1:
+          self.mixture_coefficients = lambda x: kwargs["mixture_coefficients"]
+        elif mixture_coefficients == 'linear':
+          self.mixture_coefficients = lambda x: {'base': 1 - x/(kwargs['communication_rounds']), 'public': x/(kwargs['communication_rounds'])}
+        else:
+          raise NotImplementedError('mixture_coefficients must be function or static distribution')
+
+        self.update(c_round=0)
+
+    def update(self, c_round=0):
+      self.loaders = {}
+      coeffs = self.mixture_coefficients(c_round)
+      for key in self.used_data_sources:
+        self.loaders[key] = DataLoader(self.datasets[key], batch_size=int(coeffs[key]*self.kwargs["batch_size"]), shuffle=True)
+      
 
     def __setitem__(self, key, value):
         self.loaders[key] = value
