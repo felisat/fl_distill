@@ -15,7 +15,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
 
 class Device(object):
-  def __init__(self, model_fn, optimizer_fn, loader, init=None):
+  def __init__(self, model_fn, optimizer_fn, loader,client_data=None, init=None, **kwargs):
     self.model = model_fn().to(device)
     self.loader = loader
 
@@ -44,27 +44,32 @@ class Device(object):
     
       
 class Client(Device):
-  def __init__(self, model_fn, optimizer_fn, loader, init=None, idnum=None):
+  def __init__(self, model_fn, optimizer_fn, loader, counts, distill_loader, init=None, idnum=None):
     super().__init__(model_fn, optimizer_fn, loader, init)
     self.id = idnum
     self.feature_extractor = None
-    
+    self.distill_loader = distill_loader
+
   def synchronize_with_server(self, server, c_round):
     server_state = server.model.state_dict()
     server_state = {k : v for k, v in server_state.items() if "binary" not in k}
     self.model.load_state_dict(server_state, strict=False)
     self.c_round = c_round
+
+    # update data loader subbatch distribution
+    self.loader.update(c_round=c_round)
     #copy(target=self.W, source=server.W)
     
-  def compute_weight_update(self, epochs=1, loader=None, reset_optimizer=False, train_oulier_model=False, lambda_outlier=0.1, lambda_ent=0.0):
+  def compute_weight_update(self, epochs=1, loader=None, reset_optimizer=False, train_oulier_model=False, lambda_outlier=0.1, lambda_ent=0.0, **kwargs):
     if reset_optimizer:
       self.optimizer = self.optimizer_fn(self.model.parameters())  
     if train_oulier_model:
-      train_stats = train_op_with_score(self.model, self.loader if not loader else loader, self.public_loader, self.optimizer, self.scheduler, epochs, lambda_outlier, lambda_ent)
+      train_stats = train_op_with_score(self.model, self.loader if not loader else loader, self.optimizer, self.scheduler, epochs, lambda_outlier, lambda_ent, **kwargs)
     else:
       train_stats = train_op(self.model, self.loader if not loader else loader, self.optimizer, self.scheduler, epochs)
     #print(self.label_counts)
     #eval_scores(self.model, self.distill_loader)
+
     return train_stats
 
 
@@ -178,7 +183,7 @@ class Server(Device):
     acc = 0
     for ep in range(epochs):
       running_loss, samples = 0.0, 0
-      for (x, _), idx in tqdm(self.distill_loader):   
+      for x,_, idx in tqdm(self.distill_loader):   
         x = x.to(device)     
 
         if mode == "mean_probs":
@@ -251,7 +256,7 @@ def train_op(model, loader, optimizer, scheduler, epochs):
     model.train()  
     running_loss, samples = 0.0, 0
     for ep in range(epochs):
-      for x, y in loader:   
+      for x, y, source, index in loader:   
         x, y = x.to(device), y.to(device)
         
         optimizer.zero_grad()
@@ -268,29 +273,25 @@ def train_op(model, loader, optimizer, scheduler, epochs):
 
 
 
-def train_op_with_score(model, loader, public_loader, optimizer, scheduler, epochs, lambda_outlier=1.0, lambda_ent=0.0):
+
+
+def train_op_with_score(model, loader, optimizer, scheduler, epochs, lambda_outlier=0.1, lambda_ent=0.0, **kwargs):
     model.train()  
     running_loss, running_class, running_ent, running_binary, samples = 0.0, 0.0, 0.0, 0.0, 0
     for ep in range(epochs):
-      for (x, y), ((x_pub, y_pub), idx) in zip(loader, public_loader):   
-        x, y = x.to(device), y.to(device)
-        x_pub, y_pub = x_pub.to(device), y_pub.to(device)
-
-        x_joined = torch.cat([x, x_pub])
-        y_joined = torch.cat([torch.ones(len(y)), torch.zeros(len(y_pub))]).long().to(device)
+      for x, y, source, index in loader:   
+        x, y, source = x.to(device), y.to(device), source.to(device).long()
 
         optimizer.zero_grad()
 
-        classification_loss = nn.CrossEntropyLoss()(model(x), y)
+        classification_loss = nn.CrossEntropyLoss()(model(x[source == 0]), y[source == 0])
 
-        s = model.forward_binary(x_joined).flatten()
-        outlier_loss = torch.mean((s -  y_joined)**2)
+        p = torch.nn.Softmax(1)(model.forward_binary(x))
+        ent = -torch.mean(torch.sum(p * torch.log(p.clamp_min(1e-7)), dim=1))        
+        outlier_loss = nn.CrossEntropyLoss()(model.forward_binary(x), source)
 
-        #p = torch.nn.Softmax(1)(model.forward_binary(x_joined))
-        #ent = -torch.mean(torch.sum(p * torch.log(p.clamp_min(1e-7)), dim=1))
-        #outlier_loss = nn.CrossEntropyLoss()(model.forward_binary(x_joined), y_joined)
+        loss =  lambda_outlier * kwargs["distill_weight"] * warmup(kwargs["c_round"], kwargs["max_c_round"], type=kwargs["warmup_type"]) * outlier_loss + classification_loss + lambda_ent * ent
 
-        loss =  classification_loss + lambda_outlier * outlier_loss #+ lambda_ent * ent  
 
         running_loss += loss.item()*y.shape[0]
         #running_ent += ent.item()*y.shape[0]
@@ -325,7 +326,7 @@ def eval_op(model, loader):
     samples, correct = 0, 0
 
     with torch.no_grad():
-      for i, (x, y) in enumerate(loader):
+      for i, (x, y, source, index) in enumerate(loader):
         x, y = x.to(device), y.to(device)
 
         y_ = model(x)
@@ -336,7 +337,11 @@ def eval_op(model, loader):
 
     return {"accuracy" : correct/samples}
 
-
+def warmup(curr, max, type="constant"):
+    if type == "constant":
+        return 1
+    elif type == "tanh":
+        return np.tanh(curr / (0.5 * max))
 
 def flatten(source):
   return torch.cat([value.flatten() for value in source.values()])
@@ -352,8 +357,6 @@ def reduce_average(target, sources):
 def subtract_(target, minuend, subtrahend):
   for name in target:
     target[name].data = minuend[name].detach().clone()-subtrahend[name].detach().clone()
-
-
 
 def sigmoid(x):
   return np.exp(x)/(1+np.exp(x))
