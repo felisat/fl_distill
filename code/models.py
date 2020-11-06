@@ -298,7 +298,7 @@ class resnet8_bn(nn.Module):
         self.f = Model(group_norm=group_norm).f
         # classifier
         self.fc = nn.Linear(512, num_class, bias=True)
-        self.binary = nn.Linear(512, 2, bias=True)
+        self.binary = nn.Linear(512, 1, bias=True)
 
 
         if pretrained_path:
@@ -313,7 +313,7 @@ class resnet8_bn(nn.Module):
     def forward_binary(self, x):
         x = self.f(x)
         feature = torch.flatten(x, start_dim=1)
-        out = self.binary(feature)
+        out = nn.Sigmoid()(self.binary(feature))
         return out
 
 

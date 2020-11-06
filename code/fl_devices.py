@@ -138,10 +138,10 @@ class Client(Device):
 
   def predict_deep_outlier_score(self, x):
     self.model.eval()
-    s = torch.nn.Softmax(1)(self.model.forward_binary(x.cuda()))[:,0]
+    s = torch.nn.Softmax(1)(self.model.forward_binary(x.cuda())).flatten()
     self.model.train()
     return s
-    
+
 
   def compute_prediction_matrix(self, distill_loader):
     predictions = []
@@ -268,7 +268,7 @@ def train_op(model, loader, optimizer, scheduler, epochs):
 
 
 
-def train_op_with_score(model, loader, public_loader, optimizer, scheduler, epochs, lambda_outlier=0.1, lambda_ent=0.0):
+def train_op_with_score(model, loader, public_loader, optimizer, scheduler, epochs, lambda_outlier=1.0, lambda_ent=0.0):
     model.train()  
     running_loss, running_class, running_ent, running_binary, samples = 0.0, 0.0, 0.0, 0.0, 0
     for ep in range(epochs):
@@ -277,21 +277,23 @@ def train_op_with_score(model, loader, public_loader, optimizer, scheduler, epoc
         x_pub, y_pub = x_pub.to(device), y_pub.to(device)
 
         x_joined = torch.cat([x, x_pub])
-        y_joined = torch.cat([torch.zeros(len(y)), torch.ones(len(y_pub))]).long().to(device)
+        y_joined = torch.cat([torch.ones(len(y)), torch.zeros(len(y_pub))]).long().to(device)
 
         optimizer.zero_grad()
 
         classification_loss = nn.CrossEntropyLoss()(model(x), y)
 
-        p = torch.nn.Softmax(1)(model.forward_binary(x_joined))
-        ent = -torch.mean(torch.sum(p * torch.log(p.clamp_min(1e-7)), dim=1))
-        
-        outlier_loss = nn.CrossEntropyLoss()(model.forward_binary(x_joined), y_joined)
+        s = model.forward_binary(x_joined).flatten()
+        outlier_loss = torch.mean((s -  y_joined)**2)
 
-        loss =  classification_loss + lambda_outlier * outlier_loss + lambda_ent * ent  
+        #p = torch.nn.Softmax(1)(model.forward_binary(x_joined))
+        #ent = -torch.mean(torch.sum(p * torch.log(p.clamp_min(1e-7)), dim=1))
+        #outlier_loss = nn.CrossEntropyLoss()(model.forward_binary(x_joined), y_joined)
+
+        loss =  classification_loss + lambda_outlier * outlier_loss #+ lambda_ent * ent  
 
         running_loss += loss.item()*y.shape[0]
-        running_ent += ent.item()*y.shape[0]
+        #running_ent += ent.item()*y.shape[0]
         running_binary += outlier_loss.item()*y.shape[0]
         running_class += classification_loss.item()*y.shape[0]
 
