@@ -22,8 +22,8 @@ hyperparameters=' [{
 
 	"communication_rounds" : [20],
 	"participation_rate" : [0.4],
-	"local_epochs" : [3],
-	"distill_epochs" : [3],
+	"local_epochs" : [5],
+	"distill_epochs" : [5],
 	"n_distill" : [50000],
 	"fallback" : [true],
 
@@ -31,7 +31,7 @@ hyperparameters=' [{
 	"mixture_coefficients" : [{"base":0.5, "public":0.5}],
 	"distill_weight": [1],
 	
-	"batch_size" : [128],
+	"batch_size" : [1024],
 	"aggregation_mode" : ["FAD+S"],
 	
 

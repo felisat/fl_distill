@@ -143,7 +143,7 @@ class Client(Device):
 
   def predict_deep_outlier_score(self, x):
     self.model.eval()
-    s = torch.nn.Softmax(1)(self.model.forward_binary(x.cuda())).flatten()
+    s = torch.nn.Softmax(1)(self.model.forward_binary(x.cuda()))[:,0]
     self.model.train()
     return s
 
