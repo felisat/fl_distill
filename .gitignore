@@ -9,7 +9,7 @@ __pycache__/
 viz/
 results/
 out/
-
+code/__pycache__/
 
 
 # Byte-compiled / optimized / DLL files
