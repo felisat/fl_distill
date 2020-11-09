@@ -40,16 +40,19 @@ def run_experiment(xp, xp_count, n_experiments):
   distill_data = data.IdxSubset(all_distill_data, np.random.permutation(len(all_distill_data))[:hp["n_distill"]]) # data used for distillation
   distill_loader = torch.utils.data.DataLoader(distill_data, batch_size=128, shuffle=True)
 
+  client_data, label_counts = data.get_client_data(train_data, n_clients=hp["n_clients"], 
+        classes_per_client=hp["classes_per_client"])
+
   if hp["aggregation_mode"] in ["FAD+S", "FAD+P+S"]:
     public_data = data.IdxSubset(all_distill_data, np.random.permutation(len(all_distill_data))[hp["n_distill"]:len(all_distill_data)]) # data used to train the outlier detector
     public_loader = torch.utils.data.DataLoader(public_data, batch_size=128, shuffle=True)
 
-  print(len(distill_data), len(public_data))
+    print(len(distill_data), len(public_data))
 
-  client_data, label_counts = data.get_client_data(train_data, n_clients=hp["n_clients"], 
-        classes_per_client=hp["classes_per_client"])
+    client_loaders = [data.DataMerger({'base': local_data, 'public': public_data}, **hp) for local_data in client_data]
 
-  client_loaders = [data.DataMerger({'base': local_data, 'public': public_data}, **hp) for local_data in client_data]
+  else:
+    client_loaders = [data.DataMerger({'base': local_data}, **hp) for local_data in client_data]
 
   test_loader = data.DataMerger({'base': data.IdxSubset(test_data, list(range(len(test_data))))}, mixture_coefficients={'base':1}, batch_size=100)
   distill_loader = DataLoader(distill_data, batch_size=128, shuffle=True)

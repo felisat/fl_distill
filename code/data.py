@@ -226,7 +226,7 @@ class IdxSubset(torch.utils.data.Dataset):
         self.indices = indices
 
     def __getitem__(self, idx):
-        return *self.dataset[self.indices[idx]], idx
+        return (*self.dataset[self.indices[idx]], idx)
 
     def __len__(self):
         return len(self.indices)
@@ -256,7 +256,8 @@ class DataMerger(object):
       self.loaders = {}
       coeffs = self.mixture_coefficients(c_round)
       for key in self.used_data_sources:
-        self.loaders[key] = DataLoader(self.datasets[key], batch_size=int(coeffs[key]*self.kwargs["batch_size"] + 1), shuffle=True, pin_memory=True)
+        if coeffs[key]>0:
+          self.loaders[key] = DataLoader(self.datasets[key], batch_size=int(coeffs[key]*self.kwargs["batch_size"]), shuffle=True, pin_memory=True)
       
 
     def __setitem__(self, key, value):
