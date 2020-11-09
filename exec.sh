@@ -22,7 +22,7 @@ hyperparameters=' [{
 
 	"communication_rounds" : [50],
 	"participation_rate" : [0.4],
-	"local_epochs" : [1, 3, 5, 20],
+	"local_epochs" : [10],
 	"distill_epochs" : [3],
 	"n_distill" : [50000],
 	"fallback" : [false],
@@ -32,7 +32,7 @@ hyperparameters=' [{
 	"distill_weight": [1],
 	
 	"batch_size" : [128],
-	"aggregation_mode" : ["FAD+S", "FA"],
+	"aggregation_mode" : ["FAD+S"],
 	
 
 	"pretrained" : ["simclr_resnet8_stl10_100epochs.pth"],

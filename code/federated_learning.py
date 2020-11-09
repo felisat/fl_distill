@@ -109,7 +109,7 @@ def run_experiment(xp, xp_count, n_experiments):
     
     if hp["aggregation_mode"] in ["FD", "FAD", "FAD+P", "FAD+S", "FAD+P+S"]:
 
-      distll_mode = "logits_weighted_with_deep_outlier_score" if hp["aggregation_mode"] in ["FAD+S", "FAD+P+S"] else "mean_logits"
+      distll_mode = "logits_weighted_with_max_score" if hp["aggregation_mode"] in ["FD+S", "FAD+S", "FAD+P+S"] else "mean_logits"
       distill_stats = server.distill(participating_clients, hp["distill_epochs"], mode=distll_mode, acc0=averaging_stats["accuracy"], fallback=hp["fallback"])
       xp.log({"distill_{}".format(key) : value for key, value in distill_stats.items()})
 

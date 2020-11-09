@@ -221,6 +221,21 @@ class Server(Device):
             w += weight.detach()
           y = nn.Softmax(1)(y / w)
 
+        if mode == "logits_weighted_with_max_score":
+          y = torch.zeros([x.shape[0], 10], device="cuda")
+          w = torch.zeros([x.shape[0], 1], device="cuda")
+          for i, client in enumerate(clients):
+            y_p = client.predict_logit(x)
+            weight = client.predict_deep_outlier_score(x).reshape(-1,1).cuda()
+
+            y += (y_p*weight).detach()
+            w += weight.detach()
+          y = nn.Softmax(1)(y / w)
+
+          amax = torch.argmax(y, dim=1)
+          y = torch.zeros_like(y)
+          y[torch.arange(y.shape[0]),amax] = 1          
+
         if mode == "pate":
           hist = torch.sum(torch.stack([client.predict_max(x) for client in clients]), dim=0)
           amax = torch.argmax(hist, dim=1)
