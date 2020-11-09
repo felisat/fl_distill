@@ -243,8 +243,9 @@ class Server(Device):
         self.optimizer.step()  
 
 
-    acc_new = eval_op(self.model, self.loader)["accuracy"]
-    print(acc_new)
+      acc_new = eval_op(self.model, self.loader)["accuracy"]
+      print(acc_new)
+   
     if fallback and acc_new < acc0:
       self.aggregate_weight_updates(clients)
 
@@ -258,7 +259,7 @@ def train_op(model, loader, optimizer, scheduler, epochs):
     for ep in range(epochs):
       for x, y, source, index in loader:   
         x, y = x.to(device), y.to(device)
-        
+
         optimizer.zero_grad()
 
         loss = nn.CrossEntropyLoss()(model(x), y)

@@ -43,7 +43,7 @@ def run_experiment(xp, xp_count, n_experiments):
   client_data, label_counts = data.get_client_data(train_data, n_clients=hp["n_clients"], 
         classes_per_client=hp["classes_per_client"])
 
-  if hp["aggregation_mode"] in ["FAD+S", "FAD+P+S"]:
+  if hp["aggregation_mode"] in ["FD+S", "FAD+S", "FAD+P+S"]:
     public_data = data.IdxSubset(all_distill_data, np.random.permutation(len(all_distill_data))[hp["n_distill"]:len(all_distill_data)]) # data used to train the outlier detector
     public_loader = torch.utils.data.DataLoader(public_data, batch_size=128, shuffle=True)
 
