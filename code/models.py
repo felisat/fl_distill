@@ -227,7 +227,7 @@ class lenet_large(nn.Module):
 class lenet_mnist(torch.nn.Module):
     def __init__(self):
         super(lenet_mnist, self).__init__()
-        self.conv1 = torch.nn.Conv2d(3, 6, 5)
+        self.conv1 = torch.nn.Conv2d(1, 6, 5)
         self.pool = torch.nn.MaxPool2d(2, 2)
         self.conv2 = torch.nn.Conv2d(6, 16, 5)
         self.fc1 = torch.nn.Linear(16 * 5 * 5, 120)
@@ -244,12 +244,14 @@ class lenet_mnist(torch.nn.Module):
         x = self.fc3(x)
         return x
 
-    def forward_binary(self, x):
+    def forward_binary(self, x, only_train_final_outlier_layer=False):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
         x = x.view(-1, 16 * 5 * 5)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
+        if only_train_final_outlier_layer:
+            x = x.detach()
         x = self.binary(x)
         return x
 
@@ -322,8 +324,9 @@ class resnet8_bn(nn.Module):
 
     def forward_binary(self, x):
         x = self.f(x)
+        #x = x.detach()
         feature = torch.flatten(x, start_dim=1)
-        out = nn.Sigmoid()(self.binary(feature))
+        out = self.binary(feature)
         return out
 
 
@@ -445,7 +448,7 @@ def get_model(model):
             "vgg11" : (vgg11, optim.SGD, {"lr":0.01, "momentum":0.9, "weight_decay":5e-5}),
               "lenet_cifar" : (lenet_cifar, optim.Adam, {"lr":0.001, "weight_decay":0.0}),
                "lenet_large" : (lenet_large, optim.SGD, {"lr":0.01, "momentum" : 0.9, "weight_decay":0.0}),
-              "lenet_mnist" : (lenet_mnist, optim.SGD, {"lr":0.01, "momentum" : 0.9, "weight_decay":0.0}),
+              "lenet_mnist" : (lenet_mnist, optim.Adam, {"lr":0.001, "weight_decay":0.0}),
               "mobilenetv2" : (mobilenetv2, optim.SGD, {"lr" : 0.01, "momentum" :0.9, "weight_decay" :5e-4}),
               "mobilenetv2s" : (mobilenetv2s, optim.SGD, {"lr" : 0.01, "momentum" :0.9, "weight_decay" :5e-4}),
               "mobilenetv2xs" : (mobilenetv2xs, optim.SGD, {"lr" : 0.01, "momentum" :0.9, "weight_decay" :5e-4}),

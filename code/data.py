@@ -9,8 +9,7 @@ from itertools import cycle
 def get_mnist(path):
   transforms = torchvision.transforms.Compose([ torchvision.transforms.Resize((32,32)),
                                                 torchvision.transforms.ToTensor(),    
-                                                AddChannels()
-                                                #torchvision.transforms.Normalize((0.1307,), (0.3081,))])
+                                                torchvision.transforms.Normalize((0.1307,), (0.3081,))
                                                 ])
   train_data = torchvision.datasets.MNIST(root=path+"MNIST", train=True, download=True, transform=transforms)
   test_data = torchvision.datasets.MNIST(root=path+"MNIST", train=False, download=True, transform=transforms)
@@ -21,8 +20,7 @@ def get_mnist(path):
 def get_emnist(path):
   transforms = torchvision.transforms.Compose([ torchvision.transforms.Resize((32,32)),
                                                 torchvision.transforms.ToTensor(),    
-                                                AddChannels()
-                                                #torchvision.transforms.Normalize((0.1307,), (0.3081,))])
+                                                torchvision.transforms.Normalize((0.1307,), (0.3081,))
                                                 ])
   data = torchvision.datasets.EMNIST(root=path, split="byclass", download=True, transform=transforms)
   #test_data = torchvision.datasets.MNIST(root=path+"EMNIST", train=False, download=True, transform=transforms)

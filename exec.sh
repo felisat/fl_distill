@@ -12,7 +12,7 @@ cmdargs=$1
 hyperparameters=' [{
 	"dataset" : ["mnist"], 
 	"distill_dataset" : ["emnist"],
-	"net" : ["lenet_cifar"],
+	"net" : ["lenet_mnist"],
 	
 
 	"n_clients" : [20],
@@ -25,7 +25,11 @@ hyperparameters=' [{
 	"local_epochs" : [10],
 	"distill_epochs" : [3],
 	"n_distill" : [50000],
-	"fallback" : [false],
+	"fallback" : [true],
+	"lambda_outlier" : [1.0],
+	"lambda_fedprox" : [0.0],
+	"only_train_final_outlier_layer" : [false],
+
 
 	"warmup_type": ["constant"],
 	"mixture_coefficients" : [{"base":0.5, "public":0.5}],
@@ -39,7 +43,7 @@ hyperparameters=' [{
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["mnist_compare_FA_FADS/"],
+	"log_path" : ["train_only_final_outlier_layer/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
