@@ -31,6 +31,10 @@ def run_experiment(xp, xp_count, n_experiments):
   hp = xp.hyperparameters
   
   model_fn, optimizer, optimizer_hp = models.get_model(hp["net"])
+  if "local_optimizer" in hp:
+    optimizer = getattr(torch.optim, hp["local_optimizer"][0])
+    optimizer_hp = hp["local_optimizer"][1]
+
   optimizer_fn = lambda x : optimizer(x, **{k : hp[k] if k in hp else v for k, v in optimizer_hp.items()}) 
   train_data, test_data = data.get_data(hp["dataset"], args.DATA_PATH)
   all_distill_data = data.get_data(hp["distill_dataset"], args.DATA_PATH)
@@ -58,7 +62,7 @@ def run_experiment(xp, xp_count, n_experiments):
   distill_loader = DataLoader(distill_data, batch_size=128, shuffle=True)
 
   clients = [Client(model_fn, optimizer_fn, loader, idnum=i, counts=counts, distill_loader=distill_loader) for i, (loader , counts) in enumerate(zip(client_loaders, label_counts))]
-  server = Server(model_fn, lambda x : torch.optim.Adam(x, lr=2e-3), test_loader, distill_loader)
+  server = Server(model_fn, lambda x : getattr(torch.optim, hp["distill_optimizer"][0])(x, **hp["distill_optimizer"][1]), test_loader, distill_loader)
 
   # Modes that use pretrained representation 
   if hp["aggregation_mode"] in ["FAD+P", "FAD+P+S"]:
@@ -109,7 +113,7 @@ def run_experiment(xp, xp_count, n_experiments):
     
     if hp["aggregation_mode"] in ["FD", "FAD", "FAD+P", "FAD+S", "FAD+P+S"]:
 
-      distll_mode = "logits_weighted_with_max_score" if hp["aggregation_mode"] in ["FD+S", "FAD+S", "FAD+P+S"] else "mean_logits"
+      distll_mode = "logits_weighted_with_deep_outlier_score" if hp["aggregation_mode"] in ["FD+S", "FAD+S", "FAD+P+S"] else "mean_logits"
       distill_stats = server.distill(participating_clients, hp["distill_epochs"], mode=distll_mode, acc0=averaging_stats["accuracy"], fallback=hp["fallback"])
       xp.log({"distill_{}".format(key) : value for key, value in distill_stats.items()})
 

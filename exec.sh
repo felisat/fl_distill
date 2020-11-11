@@ -14,28 +14,29 @@ hyperparameters=' [{
 	"distill_dataset" : ["emnist"],
 	"net" : ["lenet_mnist"],
 	
-
 	"n_clients" : [20],
 	"classes_per_client" : [0.01],
-	"balancedness" : [1.0],
-
-
 	"communication_rounds" : [50],
 	"participation_rate" : [0.4],
-	"local_epochs" : [10],
-	"distill_epochs" : [3],
-	"n_distill" : [50000],
+	
+
+	"local_epochs" : [20],
+	"distill_epochs" : [1],
+	"n_distill" : [100000],
+	"local_optimizer" : [["Adam", {"lr" : 0.001}]],
+	"distill_optimizer" : [["Adam", {"lr" : 0.001}]],
+
+
 	"fallback" : [true],
 	"lambda_outlier" : [1.0],
-	"lambda_fedprox" : [0.0],
+	"lambda_fedprox" : [0.001],
 	"only_train_final_outlier_layer" : [false],
-
-
 	"warmup_type": ["constant"],
 	"mixture_coefficients" : [{"base":0.5, "public":0.5}],
 	"distill_weight": [1],
-	
 	"batch_size" : [128],
+
+
 	"aggregation_mode" : ["FAD+S"],
 	
 
@@ -43,7 +44,7 @@ hyperparameters=' [{
 
 	"save_model" : [null],
 	"log_frequency" : [-100],
-	"log_path" : ["train_only_final_outlier_layer/"],
+	"log_path" : ["trash/"],
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
