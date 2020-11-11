@@ -246,7 +246,7 @@ class DataMerger(object):
         elif isinstance(kwargs["mixture_coefficients"], dict) and sum(kwargs["mixture_coefficients"].values()) == 1:
           self.mixture_coefficients = lambda x: kwargs["mixture_coefficients"]
         elif kwargs["mixture_coefficients"] == 'linear':
-          self.mixture_coefficients = lambda x: {'base': 1 - x/(kwargs['communication_rounds']) , 'public': x/(kwargs['communication_rounds'])}
+          self.mixture_coefficients = lambda x: {'base': 1 - (x-1)/(kwargs['communication_rounds']) , 'public': (x-1)/(kwargs['communication_rounds'])}
         else:
           raise NotImplementedError('mixture_coefficients must be function or static distribution')
 
@@ -256,11 +256,16 @@ class DataMerger(object):
       self.loaders = {}
       coeffs = self.mixture_coefficients(c_round)
       for key in self.used_data_sources:
-        self.loaders[key] = DataLoader(self.datasets[key], batch_size=int(coeffs[key]*self.kwargs["batch_size"] + 1), shuffle=True, pin_memory=True)
+        batch_size = int(coeffs[key]*self.kwargs["batch_size"])
+        if batch_size > 0:
+          self.loaders[key] = DataLoader(self.datasets[key], batch_size=batch_size, shuffle=True, pin_memory=True)
+
+      if len(self.loaders) == 1:
+        self.loaders = {'base': list(self.loaders.values())[0]}
       
 
     def __setitem__(self, key, value):
-        self.loaders[key] = value
+        self.datasets[key] = value
 
     def __iter__(self):
         def loop(iterable):

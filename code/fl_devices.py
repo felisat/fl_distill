@@ -279,7 +279,7 @@ def train_op_with_score(model, loader, optimizer, scheduler, epochs, lambda_outl
     model.train()  
     running_loss, running_class, running_ent, running_binary, samples = 0.0, 0.0, 0.0, 0.0, 0
     for ep in range(epochs):
-      for x, y, source, index in loader:   
+      for x, y, source, index in loader:
         x, y, source = x.to(device), y.to(device), source.to(device).long()
 
         optimizer.zero_grad()
