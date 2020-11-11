@@ -13,17 +13,17 @@ hyperparameters=' [{
 	"dataset" : ["mnist"], 
 	"distill_dataset" : ["emnist"],
 	"net" : ["lenet_mnist"],
-	
+
 	"n_clients" : [20],
 	"classes_per_client" : [0.01],
 	"communication_rounds" : [50],
 	"participation_rate" : [0.4],
 	
 
-	"local_epochs" : [20],
+	"local_epochs" : [10],
 	"distill_epochs" : [1],
 	"n_distill" : [100000],
-	"local_optimizer" : [["Adam", {"lr" : 0.001}]],
+	"local_optimizer" : [["Adam", {"lr" : 0.002}]],
 	"distill_optimizer" : [["Adam", {"lr" : 0.001}]],
 
 
@@ -35,6 +35,7 @@ hyperparameters=' [{
 	"mixture_coefficients" : [{"base":0.5, "public":0.5}],
 	"distill_weight": [1],
 	"batch_size" : [128],
+	"distill_mode" : ["logits_weighted_with_deep_outlier_score"],
 
 
 	"aggregation_mode" : ["FAD+S"],
