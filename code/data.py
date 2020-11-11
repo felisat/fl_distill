@@ -9,8 +9,7 @@ from itertools import cycle
 def get_mnist(path):
   transforms = torchvision.transforms.Compose([ torchvision.transforms.Resize((32,32)),
                                                 torchvision.transforms.ToTensor(),    
-                                                AddChannels()
-                                                #torchvision.transforms.Normalize((0.1307,), (0.3081,))])
+                                                torchvision.transforms.Normalize((0.1307,), (0.3081,))
                                                 ])
   train_data = torchvision.datasets.MNIST(root=path+"MNIST", train=True, download=True, transform=transforms)
   test_data = torchvision.datasets.MNIST(root=path+"MNIST", train=False, download=True, transform=transforms)
@@ -21,8 +20,7 @@ def get_mnist(path):
 def get_emnist(path):
   transforms = torchvision.transforms.Compose([ torchvision.transforms.Resize((32,32)),
                                                 torchvision.transforms.ToTensor(),    
-                                                AddChannels()
-                                                #torchvision.transforms.Normalize((0.1307,), (0.3081,))])
+                                                torchvision.transforms.Normalize((0.1307,), (0.3081,))
                                                 ])
   data = torchvision.datasets.EMNIST(root=path, split="byclass", download=True, transform=transforms)
   #test_data = torchvision.datasets.MNIST(root=path+"EMNIST", train=False, download=True, transform=transforms)
@@ -226,7 +224,7 @@ class IdxSubset(torch.utils.data.Dataset):
         self.indices = indices
 
     def __getitem__(self, idx):
-        return *self.dataset[self.indices[idx]], idx
+        return (*self.dataset[self.indices[idx]], idx)
 
     def __len__(self):
         return len(self.indices)
@@ -255,6 +253,8 @@ class DataMerger(object):
     def update(self, c_round=0):
       self.loaders = {}
       coeffs = self.mixture_coefficients(c_round)
+      if len(self.datasets)==1:
+        coeffs = {"base" : 1.0}
       for key in self.used_data_sources:
         batch_size = int(coeffs[key]*self.kwargs["batch_size"])
         if batch_size > 0:

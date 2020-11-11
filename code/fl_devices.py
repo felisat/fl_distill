@@ -66,7 +66,7 @@ class Client(Device):
     if train_oulier_model:
       train_stats = train_op_with_score(self.model, self.loader if not loader else loader, self.optimizer, self.scheduler, epochs, lambda_outlier, lambda_ent, **kwargs)
     else:
-      train_stats = train_op(self.model, self.loader if not loader else loader, self.optimizer, self.scheduler, epochs)
+      train_stats = train_op(self.model, self.loader if not loader else loader, self.optimizer, self.scheduler, epochs, **kwargs)
     #print(self.label_counts)
     #eval_scores(self.model, self.distill_loader)
 
@@ -176,10 +176,6 @@ class Server(Device):
       self.optimizer = self.optimizer_fn(self.model.parameters())   
     self.model.train()  
 
-    valid_modes = ["mean_probs", "mean_logits", "probs_weighted_with_deep_outlier_score", "logits_weighted_with_deep_outlier_score", "pate", "pate_up"]
-    assert mode in valid_modes, "mode has to be one of {}".format(valid_modes)
-
-
     acc = 0
     for ep in range(epochs):
       running_loss, samples = 0.0, 0
@@ -221,6 +217,21 @@ class Server(Device):
             w += weight.detach()
           y = nn.Softmax(1)(y / w)
 
+        if mode == "logits_weighted_with_max_score":
+          y = torch.zeros([x.shape[0], 10], device="cuda")
+          w = torch.zeros([x.shape[0], 1], device="cuda")
+          for i, client in enumerate(clients):
+            y_p = client.predict_logit(x)
+            weight = client.predict_deep_outlier_score(x).reshape(-1,1).cuda()
+
+            y += (y_p*weight).detach()
+            w += weight.detach()
+          y = nn.Softmax(1)(y / w)
+
+          amax = torch.argmax(y, dim=1)
+          y = torch.zeros_like(y)
+          y[torch.arange(y.shape[0]),amax] = 1          
+
         if mode == "pate":
           hist = torch.sum(torch.stack([client.predict_max(x) for client in clients]), dim=0)
           amax = torch.argmax(hist, dim=1)
@@ -243,8 +254,9 @@ class Server(Device):
         self.optimizer.step()  
 
 
-    acc_new = eval_op(self.model, self.loader)["accuracy"]
-    print(acc_new)
+      acc_new = eval_op(self.model, self.loader)["accuracy"]
+      print(acc_new)
+   
     if fallback and acc_new < acc0:
       self.aggregate_weight_updates(clients)
 
@@ -252,16 +264,23 @@ class Server(Device):
 
 
 
-def train_op(model, loader, optimizer, scheduler, epochs):
+def train_op(model, loader, optimizer, scheduler, epochs, lambda_fedprox=0.0, **kw_args):
     model.train()  
     running_loss, samples = 0.0, 0
+
+    W0 = {k : v.detach().clone() for k, v in model.named_parameters()}
+
     for ep in range(epochs):
       for x, y, source, index in loader:   
         x, y = x.to(device), y.to(device)
-        
+
         optimizer.zero_grad()
 
         loss = nn.CrossEntropyLoss()(model(x), y)
+
+        if lambda_fedprox != 0.0:
+          loss += lambda_fedprox * torch.sum((flatten(W0).cuda()-flatten(dict(model.named_parameters())).cuda())**2)
+
         running_loss += loss.item()*y.shape[0]
         samples += y.shape[0]
 
@@ -275,8 +294,11 @@ def train_op(model, loader, optimizer, scheduler, epochs):
 
 
 
-def train_op_with_score(model, loader, optimizer, scheduler, epochs, lambda_outlier=0.1, lambda_ent=0.0, **kwargs):
+def train_op_with_score(model, loader, optimizer, scheduler, epochs, lambda_outlier=0.1, lambda_ent=0.0, lambda_fedprox=0.0, only_train_final_outlier_layer=False, **kwargs):
     model.train()  
+
+    W0 = {k : v.detach().clone() for k, v in model.named_parameters()}
+
     running_loss, running_class, running_ent, running_binary, samples = 0.0, 0.0, 0.0, 0.0, 0
     for ep in range(epochs):
       for x, y, source, index in loader:
@@ -285,12 +307,18 @@ def train_op_with_score(model, loader, optimizer, scheduler, epochs, lambda_outl
         optimizer.zero_grad()
 
         classification_loss = nn.CrossEntropyLoss()(model(x[source == 0]), y[source == 0])
+       
+        outlier_loss = nn.CrossEntropyLoss()(model.forward_binary(x, only_train_final_outlier_layer), source)
 
-        p = torch.nn.Softmax(1)(model.forward_binary(x))
-        ent = -torch.mean(torch.sum(p * torch.log(p.clamp_min(1e-7)), dim=1))        
-        outlier_loss = nn.CrossEntropyLoss()(model.forward_binary(x), source)
+        loss =  lambda_outlier * kwargs["distill_weight"] * warmup(kwargs["c_round"], kwargs["max_c_round"], type=kwargs["warmup_type"]) * outlier_loss + classification_loss 
 
-        loss =  lambda_outlier * kwargs["distill_weight"] * warmup(kwargs["c_round"], kwargs["max_c_round"], type=kwargs["warmup_type"]) * outlier_loss + classification_loss + lambda_ent * ent
+        if lambda_fedprox > 0.0:
+          loss += lambda_fedprox * torch.sum((flatten(W0).cuda()-flatten(dict(model.named_parameters())).cuda())**2)
+
+        if lambda_ent > 0.0:
+          p = torch.nn.Softmax(1)(model.forward_binary(x))
+          ent = -torch.mean(torch.sum(p * torch.log(p.clamp_min(1e-7)), dim=1)) 
+          loss += lambda_ent * ent
 
 
         running_loss += loss.item()*y.shape[0]
@@ -304,7 +332,7 @@ def train_op_with_score(model, loader, optimizer, scheduler, epochs, lambda_outl
         optimizer.step()  
       #scheduler.step()
 
-    return {"loss" : running_loss / samples, "outlier_loss" : running_binary / samples, "entropy_loss" : running_ent / samples, "classification_loss" : running_class / samples}
+    return {"loss" : running_loss / samples, "outlier_loss" : running_binary / samples, "classification_loss" : running_class / samples}
 
 
 def eval_scores(model, eval_loader):
