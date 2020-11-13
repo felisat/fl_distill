@@ -6,6 +6,9 @@ from torch.utils.data import DataLoader
 
 from itertools import cycle
 
+import logging
+logger = logging.getLogger(__name__)
+
 def get_mnist(path):
   transforms = torchvision.transforms.Compose([ torchvision.transforms.Resize((32,32)),
                                                 torchvision.transforms.ToTensor(),    
@@ -193,18 +196,17 @@ def make_double_stochstic(x):
 
 def print_split(idcs, labels):
   n_labels = np.max(labels) + 1 
-  print("Data split:")
+  logger.debug("Data split:")
   splits = []
   for i, idccs in enumerate(idcs):
     split = np.sum(np.array(labels)[idccs].reshape(1,-1)==np.arange(n_labels).reshape(-1,1), axis=1)
     splits += [split]
     if len(idcs) < 30 or i < 10 or i>len(idcs)-10:
-      print(" - Client {}: {:55} -> sum={}".format(i,str(split), np.sum(split)), flush=True)
+      logger.debug(" - Client {}: {:55} -> sum={}".format(i,str(split), np.sum(split)))
     elif i==len(idcs)-10:
-      print(".  "*10+"\n"+".  "*10+"\n"+".  "*10)
+      logger.debug(".  "*10+"\n"+".  "*10+"\n"+".  "*10)
 
-  print(" - Total:     {}".format(np.stack(splits, axis=0).sum(axis=0)))
-  print()
+  logger.debug(" - Total:     {}".format(np.stack(splits, axis=0).sum(axis=0)))
 
 
 

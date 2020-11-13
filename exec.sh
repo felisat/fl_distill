@@ -9,20 +9,22 @@
 
 cmdargs=$1
 
+hpo=true 
+
 hyperparameters=' [{
 	"dataset" : ["mnist"], 
 	"distill_dataset" : ["emnist"],
 	"net" : ["lenet_mnist"],
 
-	"n_clients" : [20],
+	"n_clients" : [5],
 	"classes_per_client" : [0.01],
-	"communication_rounds" : [50],
+	"communication_rounds" : [1],
 	"participation_rate" : [0.4],
 	
 
-	"local_epochs" : [10],
+	"local_epochs" : [1],
 	"distill_epochs" : [1],
-	"n_distill" : [100000],
+	"n_distill" : [1000],
 	"local_optimizer" : [["Adam", {"lr" : 0.002}]],
 	"distill_optimizer" : [["Adam", {"lr" : 0.001}]],
 
@@ -33,7 +35,6 @@ hyperparameters=' [{
 	"only_train_final_outlier_layer" : [false],
 	"warmup_type": ["constant"],
 	"mixture_coefficients" : [{"base":0.5, "public":0.5}],
-	"distill_weight": [1],
 	"batch_size" : [128],
 	"distill_mode" : ["logits_weighted_with_deep_outlier_score"],
 
@@ -49,18 +50,32 @@ hyperparameters=' [{
 	"job_id" : [['$SLURM_JOB_ID']]}]'
 
 
+if [[ $hpo == true ]]; then
+
+	run_command="hpo.py"
+
+else
+
+	run_command="federated_learning.py"
+
+fi
+
+
+
 
 if [[ "$HOSTNAME" == *"vca"* ]]; then # Cluster
 
 	RESULTS_PATH="/opt/small_files/"
 	DATA_PATH="/opt/in_ram_data/"
 	CHECKPOINT_PATH="/opt/checkpoints/"
+	CODE_SRC="/opt/code/"
+	SHARE_SRC="/opt/share/"
 
 	echo $hyperparameters
 	source "/etc/slurm/local_job_dir.sh"
 
 	export SINGULARITY_BINDPATH="$LOCAL_DATA:/data,$LOCAL_JOB_DIR:/mnt/output,./code:/opt/code,./checkpoints:/opt/checkpoints,./results:/opt/small_files,$HOME/in_ram_data:/opt/in_ram_data"
-	singularity exec --nv $HOME/base_images/pytorch15.sif python -u /opt/code/federated_learning.py --hp="$hyperparameters" --RESULTS_PATH="$RESULTS_PATH" --DATA_PATH="$DATA_PATH" --CHECKPOINT_PATH="$CHECKPOINT_PATH" $cmdargs
+	singularity exec --nv $HOME/base_images/pytorch15.sif python -u "$CODE_SRC${run_command}" --hp="$hyperparameters" --RESULTS_PATH="$RESULTS_PATH" --DATA_PATH="$DATA_PATH" --CHECKPOINT_PATH="$CHECKPOINT_PATH" --SHARE_PATH="$SHARE_SRC" --WORKERS 16 $cmdargs
 
 	mkdir -p results
 	cp -r ${LOCAL_JOB_DIR}/. ${SLURM_SUBMIT_DIR}/results	
@@ -69,18 +84,11 @@ if [[ "$HOSTNAME" == *"vca"* ]]; then # Cluster
 else # Local
 
 	RESULTS_PATH="results/"
-	DATA_PATH="/home/sattler/Data/PyTorch/"
+	DATA_PATH="data/"
 	CHECKPOINT_PATH="checkpoints/"
+	CODE_SRC="code/"
+	SHARE_SRC="share/"
 
-	python -u code/federated_learning.py --hp="$hyperparameters" --RESULTS_PATH="$RESULTS_PATH" --DATA_PATH="$DATA_PATH" --CHECKPOINT_PATH="$CHECKPOINT_PATH" $cmdargs
-
-
-
+	python -u "$CODE_SRC${run_command}" --hp="$hyperparameters" --RESULTS_PATH="$RESULTS_PATH" --DATA_PATH="$DATA_PATH" --CHECKPOINT_PATH="$CHECKPOINT_PATH" --SHARE_PATH="$SHARE_SRC" --WORKERS 10 $cmdargs
 
 fi
-
-
-
-
-
-

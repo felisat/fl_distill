@@ -9,7 +9,8 @@ from models import outlier_net
 
 from virtual_adversarial_training import VATLoss
 
-
+import logging
+logger = logging.getLogger(__name__)
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
@@ -32,15 +33,15 @@ class Device(object):
   def evaluate(self, loader=None):
     return eval_op(self.model, self.loader if not loader else loader)
 
-  def save_model(self, path=None, name=None, verbose=True):
+  def save_model(self, path=None, name=None):
     if name:
       torch.save(self.model.state_dict(), path+name)
-      if verbose: print("Saved model to", path+name)
+      logger.debug(f"Saved model to {path+name}")
 
-  def load_model(self, path=None, name=None, verbose=True):
+  def load_model(self, path=None, name=None):
     if name:
       self.model.load_state_dict(torch.load(path+name))
-      if verbose: print("Loaded model from", path+name)
+      logger.debug(f"Loaded model from {path+name}")
     
       
 class Client(Device):
@@ -171,7 +172,7 @@ class Server(Device):
 
 
   def distill(self, clients, epochs=1, mode="mean_probs", reset_optimizer=False, acc0=0.0, fallback=True):
-    print("Distilling...")
+    logger.info("Distilling...")
     if reset_optimizer:
       self.optimizer = self.optimizer_fn(self.model.parameters())   
     self.model.train()  
@@ -255,7 +256,7 @@ class Server(Device):
 
 
       acc_new = eval_op(self.model, self.loader)["accuracy"]
-      print(acc_new)
+      logger.debug(acc_new)
    
     if fallback and acc_new < acc0:
       self.aggregate_weight_updates(clients)
@@ -310,7 +311,7 @@ def train_op_with_score(model, loader, optimizer, scheduler, epochs, lambda_outl
        
         outlier_loss = nn.CrossEntropyLoss()(model.forward_binary(x, only_train_final_outlier_layer), source)
 
-        loss =  lambda_outlier * kwargs["distill_weight"] * warmup(kwargs["c_round"], kwargs["max_c_round"], type=kwargs["warmup_type"]) * outlier_loss + classification_loss 
+        loss =  lambda_outlier * warmup(kwargs["c_round"], kwargs["max_c_round"], type=kwargs["warmup_type"]) * outlier_loss + classification_loss 
 
         if lambda_fedprox > 0.0:
           loss += lambda_fedprox * torch.sum((flatten(W0).cuda()-flatten(dict(model.named_parameters())).cuda())**2)
@@ -346,7 +347,7 @@ def eval_scores(model, eval_loader):
     ys = np.concatenate(ys)
 
     for i in range(10):
-      print(" -",i, np.mean(preds[ys==i]), "+-", np.std(preds[ys==i]))
+      logger.debug(" -",i, np.mean(preds[ys==i]), "+-", np.std(preds[ys==i]))
 
 
 def eval_op(model, loader):
