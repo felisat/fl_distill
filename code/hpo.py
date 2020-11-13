@@ -92,7 +92,7 @@ def run_hpo(args, tae_runner):
     # create empty config space
     cs = ConfigurationSpace()
     #
-    local_epochs = UniformIntegerHyperparameter("local_epochs", 1, 10, default_value=1)
+    local_epochs = UniformIntegerHyperparameter("local_epochs", 1, 20, default_value=10)
     distill_epochs = UniformIntegerHyperparameter("distill_epochs", 1, 20, default_value=1)
 
     #
@@ -121,7 +121,7 @@ def run_hpo(args, tae_runner):
     # Scenario object
     scenario = Scenario({
         "run_obj": "quality",  # we optimize quality (alternatively runtime)
-        "runcount-limit": 7,  # max. number of function evaluations; for this example set to a low number
+        "runcount-limit": 100,  # max. number of function evaluations; for this example set to a low number
         "cs": cs,  # configuration space
         "deterministic": False,
         "shared_model": True,
@@ -130,9 +130,9 @@ def run_hpo(args, tae_runner):
         "limit_resources": False
     })
 
-    max_iters = 5
+    max_iters = 50
     # intensifier parameters
-    intensifier_kwargs = {'initial_budget': 1, 'max_budget': max_iters, 'eta': 2}
+    intensifier_kwargs = {'initial_budget': 1, 'max_budget': max_iters, 'eta': 3}
 
     # Optimize, using a SMAC-object
     print("Optimizing!")
