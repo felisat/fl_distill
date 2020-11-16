@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=$SLURM_EMAIL
+#SBATCH --mail-user=felix.sattler@hhi.fraunhofer.de
 #SBATCH --output=out/%j.out
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
@@ -74,7 +74,7 @@ if [[ "$HOSTNAME" == *"vca"* ]]; then # Cluster
 	echo $hyperparameters
 	source "/etc/slurm/local_job_dir.sh"
 
-	export SINGULARITY_BINDPATH="$LOCAL_DATA:/data,$LOCAL_JOB_DIR:/mnt/output,./code:/opt/code,./checkpoints:/opt/checkpoints,./results:/opt/small_files,$HOME/in_ram_data:/opt/in_ram_data"
+	export SINGULARITY_BINDPATH="$LOCAL_DATA:/data,$LOCAL_JOB_DIR:/mnt/output,./code:/opt/code,./checkpoints:/opt/checkpoints,./results:/opt/small_files,$HOME/in_ram_data:/opt/in_ram_data,./share:/opt/share"
 	singularity exec --nv $HOME/base_images/pytorch15.sif python -u "$CODE_SRC${run_command}" --hp="$hyperparameters" --RESULTS_PATH="$RESULTS_PATH" --DATA_PATH="$DATA_PATH" --CHECKPOINT_PATH="$CHECKPOINT_PATH" --SHARE_PATH="$SHARE_SRC" --WORKERS 16 $cmdargs
 
 	mkdir -p results
