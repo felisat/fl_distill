@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=felix.sattler@hhi.fraunhofer.de
+#SBATCH --mail-user=$SLURM_EMAIL
 #SBATCH --output=out/%j.out
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
@@ -89,6 +89,6 @@ else # Local
 	CODE_SRC="code/"
 	SHARE_SRC="share/"
 
-	python -u "$CODE_SRC${run_command}" --hp="$hyperparameters" --RESULTS_PATH="$RESULTS_PATH" --DATA_PATH="$DATA_PATH" --CHECKPOINT_PATH="$CHECKPOINT_PATH" --SHARE_PATH="$SHARE_SRC" --WORKERS 10 $cmdargs
+	python -u "$CODE_SRC${run_command}" --hp="$hyperparameters" --RESULTS_PATH="$RESULTS_PATH" --DATA_PATH="$DATA_PATH" --CHECKPOINT_PATH="$CHECKPOINT_PATH" --SHARE_PATH="$SHARE_SRC" --WORKERS 6 $cmdargs
 
 fi
