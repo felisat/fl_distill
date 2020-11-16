@@ -132,7 +132,7 @@ def run_hpo(args, tae_runner):
 
     max_iters = 50
     # intensifier parameters
-    intensifier_kwargs = {'initial_budget': 1, 'max_budget': max_iters, 'eta': 3}
+    intensifier_kwargs = {'initial_budget': 5, 'max_budget': max_iters, 'eta': 3}
 
     # Optimize, using a SMAC-object
     print("Optimizing!")
