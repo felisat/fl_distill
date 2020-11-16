@@ -26,7 +26,7 @@
 
 	<<<<<<<<<<<< pytorch15.def >>>>>>>>>>>
 	Bootstrap: docker
-	From: pytorch/pytorch:latest
+	From: pytorch/pytorch:1.6.0-cuda10.1-cudnn7-runtime
 
 	%post
 	export "PATH=/opt/conda/bin:$PATH"
