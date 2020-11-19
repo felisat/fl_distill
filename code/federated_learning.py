@@ -80,7 +80,7 @@ def run_experiment(xp, xp_count, n_experiments, args, seed=0):
   if hp["aggregation_mode"] in ["FAD+P", "FAD+P+S"] and os.path.isfile(args.CHECKPOINT_PATH+hp["pretrained"]) :
     for device in clients+[server]:
       device.model.load_state_dict(torch.load(args.CHECKPOINT_PATH+hp["pretrained"], map_location='cpu'), strict=False)
-    logger.debug("Successfully loader model from", hp["pretrained"])
+    logger.debug(f"Successfully loaded model from {hp['pretrained']}")
 
 
   """
@@ -156,7 +156,7 @@ def run_experiment(xp, xp_count, n_experiments, args, seed=0):
   server.save_model(path=args.CHECKPOINT_PATH, name=hp["save_model"])
     
   try:
-    return eval_results['accuracy'] if eval_results else server.evaluate()['accuracy']
+    return 1 - eval_results['accuracy'] if eval_results else 1 - server.evaluate()['accuracy']
   finally:
     # Delete objects to free up GPU memory
     del server; clients.clear()

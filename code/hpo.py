@@ -2,10 +2,11 @@ import logging
 import os, argparse, json, copy, time
 import warnings
 import glob
+import hashlib
 import logging
 import random
 logger = logging.getLogger("HPO")
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 warnings.filterwarnings("ignore")
 
 
@@ -31,14 +32,14 @@ import torch
 def create_tae_monad(cmdargs):
     def experiment_wrapper(cfg, seed, instance, budget, **kwargs):
 
-        model_name = json.dumps(cfg._values, sort_keys=True)
+        model_name = hashlib.sha1(json.dumps(cfg._values, sort_keys=True).encode()).hexdigest()
         files = glob.glob(f"{args.CHECKPOINT_PATH}/*-{model_name}.pth")
         if files:
-            oldbudget = int(files[0].split('/')[1].split('-')[0])
+            oldbudget = int(files[0].split('/')[-1].split('-')[0])
         else:
             oldbudget = 0
 
-        budget = int(budget) - oldbudget
+        budget = max(0, int(budget) - oldbudget)
         hp = {
         "dataset" : "mnist", 
         "distill_dataset" : "emnist",
@@ -123,7 +124,7 @@ def run_hpo(args, tae_runner):
         "run_obj": "quality",  # we optimize quality (alternatively runtime)
         "runcount-limit": 100,  # max. number of function evaluations; for this example set to a low number
         "cs": cs,  # configuration space
-        "deterministic": False,
+        "deterministic": True,
         "shared_model": True,
         "input_psmac_dirs": args.SHARE_PATH + '*',
         "output_dir": args.SHARE_PATH,
