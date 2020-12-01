@@ -6,6 +6,9 @@ from torch.utils.data import DataLoader
 
 from itertools import cycle
 
+import logging
+logger = logging.getLogger(__name__)
+
 def get_mnist(path):
   transforms = torchvision.transforms.Compose([ torchvision.transforms.Resize((32,32)),
                                                 torchvision.transforms.ToTensor(),    
@@ -193,18 +196,17 @@ def make_double_stochstic(x):
 
 def print_split(idcs, labels):
   n_labels = np.max(labels) + 1 
-  print("Data split:")
+  logger.debug("Data split:")
   splits = []
   for i, idccs in enumerate(idcs):
     split = np.sum(np.array(labels)[idccs].reshape(1,-1)==np.arange(n_labels).reshape(-1,1), axis=1)
     splits += [split]
     if len(idcs) < 30 or i < 10 or i>len(idcs)-10:
-      print(" - Client {}: {:55} -> sum={}".format(i,str(split), np.sum(split)), flush=True)
+      logger.debug(" - Client {}: {:55} -> sum={}".format(i,str(split), np.sum(split)))
     elif i==len(idcs)-10:
-      print(".  "*10+"\n"+".  "*10+"\n"+".  "*10)
+      logger.debug(".  "*10+"\n"+".  "*10+"\n"+".  "*10)
 
-  print(" - Total:     {}".format(np.stack(splits, axis=0).sum(axis=0)))
-  print()
+  logger.debug(" - Total:     {}".format(np.stack(splits, axis=0).sum(axis=0)))
 
 
 
@@ -244,7 +246,7 @@ class DataMerger(object):
         elif isinstance(kwargs["mixture_coefficients"], dict) and sum(kwargs["mixture_coefficients"].values()) == 1:
           self.mixture_coefficients = lambda x: kwargs["mixture_coefficients"]
         elif kwargs["mixture_coefficients"] == 'linear':
-          self.mixture_coefficients = lambda x: {'base': 1 - x/(kwargs['communication_rounds']) , 'public': x/(kwargs['communication_rounds'])}
+          self.mixture_coefficients = lambda x: {'base': 1 - (x-1)/(kwargs['communication_rounds']) , 'public': (x-1)/(kwargs['communication_rounds'])}
         else:
           raise NotImplementedError('mixture_coefficients must be function or static distribution')
 
@@ -256,12 +258,16 @@ class DataMerger(object):
       if len(self.datasets)==1:
         coeffs = {"base" : 1.0}
       for key in self.used_data_sources:
-        if coeffs[key]>0:
-          self.loaders[key] = DataLoader(self.datasets[key], batch_size=int(coeffs[key]*self.kwargs["batch_size"]), shuffle=True, pin_memory=True)
+        batch_size = int(coeffs[key]*self.kwargs["batch_size"])
+        if batch_size > 0:
+          self.loaders[key] = DataLoader(self.datasets[key], batch_size=batch_size, shuffle=True, pin_memory=True)
+
+      if len(self.loaders) == 1:
+        self.loaders = {'base': list(self.loaders.values())[0]}
       
 
     def __setitem__(self, key, value):
-        self.loaders[key] = value
+        self.datasets[key] = value
 
     def __iter__(self):
         def loop(iterable):

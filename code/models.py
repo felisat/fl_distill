@@ -7,6 +7,9 @@ from torchvision.models.resnet import ResNet, BasicBlock
 import numpy as np
 import torchvision
 
+import logging
+logger = logging.getLogger(__name__)
+
 from functools import partial
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -461,12 +464,11 @@ def get_model(model):
 
 def print_model(model):
   n = 0
-  print("Model:")
+  logger.debug("Model:")
   for key, value in model.named_parameters():
-    print(' -', '{:30}'.format(key), list(value.shape), "Requires Grad:", value.requires_grad)
+    logger.debug(f" - {key:30} \t {list(value.shape)} Requires Grad: {value.requires_grad}")
     n += value.numel()
-  print("Total number of Parameters: ", n) 
-  print()
+  logger.debug(f"Total number of Parameters: {n}") 
 
 
 

@@ -5,23 +5,23 @@ import numpy as np
 import itertools as it
 import matplotlib.pyplot as plt
 
+import logging
+logger = logging.getLogger(__name__)
 
 
-def save_results(results_dict, path, name, verbose=True):
+
+def save_results(results_dict, path, name):
     results_numpy = {key : np.array(value)for key, value in results_dict.items()}
 
     if not os.path.exists(path):
         os.makedirs(path)
     np.savez(path+name, **results_numpy) 
-    if verbose:
-        print("Saved results to ", path+name+".npz")
+    logger.debug(f"Saved results to {path+name}.npz")
 
 
-def load_results(path, filename, verbose=True):
+def load_results(path, filename):
     results_dict = np.load(path+filename, allow_pickle=True)
-
-    if verbose:
-        print("Loaded results from "+path+filename)
+    logger.debug(f"Loaded results from {path+filename}")
     return results_dict
 
 
@@ -57,7 +57,7 @@ class Experiment():
 
 
 
-    def log(self, update_dict, printout=True, override=False):
+    def log(self, update_dict, override=False):
         # update a result
         for key, value in update_dict.items(): 
             if (not key in self.results) or override:
@@ -65,8 +65,7 @@ class Experiment():
             else:
                 self.results[key] += [value]
 
-        if printout:
-            print(update_dict)
+        logger.debug(update_dict)
 
 
     def is_log_round(self, c_round):
