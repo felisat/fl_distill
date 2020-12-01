@@ -1,0 +1,12 @@
+distill_epochs integer [1, 20] [1]
+fallback categorical {True, False} [True]
+lambda_fedprox real [1e-06, 10.0] [0.01]log
+lambda_outlier real [0.0, 10.0] [1.0]
+local_epochs integer [1, 20] [10]
+local_optimizer categorical {Adam, SGD} [Adam]
+mixture_coefficients_base real [0.0, 1.0] [0.5]
+adam_lr real [1e-05, 1.0] [0.001]log
+sgd_lr real [1e-05, 1.0] [0.1]log
+
+adam_lr | local_optimizer == Adam
+sgd_lr | local_optimizer == SGD

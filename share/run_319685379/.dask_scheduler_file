@@ -1,0 +1,266 @@
+{
+  "type": "Scheduler",
+  "id": "Scheduler-4785e46c-7ec6-468c-b768-d64f92d6c3b9",
+  "address": "tcp://127.0.0.1:34611",
+  "services": {
+    "dashboard": 32787
+  },
+  "workers": {
+    "tcp://127.0.0.1:34911": {
+      "type": "Worker",
+      "id": 3,
+      "host": "127.0.0.1",
+      "resources": {},
+      "local_directory": "/opt/share/run_319685379/dask-worker-space/worker-_zbo2jc8",
+      "name": 3,
+      "nthreads": 1,
+      "memory_limit": 67553994240,
+      "last_seen": 1606007932.8724973,
+      "services": {
+        "dashboard": 45233
+      },
+      "metrics": {
+        "cpu": 0.0,
+        "memory": 290197504,
+        "time": 1606007932.803982,
+        "read_bytes": 0.0,
+        "write_bytes": 0.0,
+        "num_fds": 27,
+        "executing": 0,
+        "in_memory": 0,
+        "ready": 0,
+        "in_flight": 0,
+        "bandwidth": {
+          "total": 100000000,
+          "workers": {},
+          "types": {}
+        }
+      },
+      "nanny": "tcp://127.0.0.1:45577"
+    },
+    "tcp://127.0.0.1:35617": {
+      "type": "Worker",
+      "id": 1,
+      "host": "127.0.0.1",
+      "resources": {},
+      "local_directory": "/opt/share/run_319685379/dask-worker-space/worker-afb19t9g",
+      "name": 1,
+      "nthreads": 1,
+      "memory_limit": 67553994240,
+      "last_seen": 1606007932.9127166,
+      "services": {
+        "dashboard": 35351
+      },
+      "metrics": {
+        "cpu": 0.0,
+        "memory": 289320960,
+        "time": 1606007932.8040078,
+        "read_bytes": 0.0,
+        "write_bytes": 0.0,
+        "num_fds": 27,
+        "executing": 0,
+        "in_memory": 0,
+        "ready": 0,
+        "in_flight": 0,
+        "bandwidth": {
+          "total": 100000000,
+          "workers": {},
+          "types": {}
+        }
+      },
+      "nanny": "tcp://127.0.0.1:37169"
+    },
+    "tcp://127.0.0.1:40357": {
+      "type": "Worker",
+      "id": 4,
+      "host": "127.0.0.1",
+      "resources": {},
+      "local_directory": "/opt/share/run_319685379/dask-worker-space/worker-baloozia",
+      "name": 4,
+      "nthreads": 1,
+      "memory_limit": 67553994240,
+      "last_seen": 1606007932.7365115,
+      "services": {
+        "dashboard": 34653
+      },
+      "metrics": {
+        "cpu": 0.0,
+        "memory": 291012608,
+        "time": 1606007932.6788635,
+        "read_bytes": 0.0,
+        "write_bytes": 0.0,
+        "num_fds": 27,
+        "executing": 0,
+        "in_memory": 0,
+        "ready": 0,
+        "in_flight": 0,
+        "bandwidth": {
+          "total": 100000000,
+          "workers": {},
+          "types": {}
+        }
+      },
+      "nanny": "tcp://127.0.0.1:46169"
+    },
+    "tcp://127.0.0.1:41409": {
+      "type": "Worker",
+      "id": 2,
+      "host": "127.0.0.1",
+      "resources": {},
+      "local_directory": "/opt/share/run_319685379/dask-worker-space/worker-tw2z7fr6",
+      "name": 2,
+      "nthreads": 1,
+      "memory_limit": 67553994240,
+      "last_seen": 1606007932.9277396,
+      "services": {
+        "dashboard": 38241
+      },
+      "metrics": {
+        "cpu": 0.0,
+        "memory": 291209216,
+        "time": 1606007932.9096045,
+        "read_bytes": 298881.52019002376,
+        "write_bytes": 0.0,
+        "num_fds": 27,
+        "executing": 0,
+        "in_memory": 0,
+        "ready": 0,
+        "in_flight": 0,
+        "bandwidth": {
+          "total": 100000000,
+          "workers": {},
+          "types": {}
+        }
+      },
+      "nanny": "tcp://127.0.0.1:37741"
+    },
+    "tcp://127.0.0.1:41415": {
+      "type": "Worker",
+      "id": 0,
+      "host": "127.0.0.1",
+      "resources": {},
+      "local_directory": "/opt/share/run_319685379/dask-worker-space/worker-zwgb0mkw",
+      "name": 0,
+      "nthreads": 1,
+      "memory_limit": 67553994240,
+      "last_seen": 1606007932.6093829,
+      "services": {
+        "dashboard": 37123
+      },
+      "metrics": {
+        "cpu": 0.0,
+        "memory": 289026048,
+        "time": 1606007932.5457754,
+        "read_bytes": 9265645.736777367,
+        "write_bytes": 7140118.986469865,
+        "num_fds": 27,
+        "executing": 0,
+        "in_memory": 0,
+        "ready": 0,
+        "in_flight": 0,
+        "bandwidth": {
+          "total": 100000000,
+          "workers": {},
+          "types": {}
+        }
+      },
+      "nanny": "tcp://127.0.0.1:38993"
+    },
+    "tcp://127.0.0.1:43361": {
+      "type": "Worker",
+      "id": 5,
+      "host": "127.0.0.1",
+      "resources": {},
+      "local_directory": "/opt/share/run_319685379/dask-worker-space/worker-3h8n4jaa",
+      "name": 5,
+      "nthreads": 1,
+      "memory_limit": 67553994240,
+      "last_seen": 1606007932.6586783,
+      "services": {
+        "dashboard": 41185
+      },
+      "metrics": {
+        "cpu": 0.0,
+        "memory": 289275904,
+        "time": 1606007932.5917213,
+        "read_bytes": 0.0,
+        "write_bytes": 0.0,
+        "num_fds": 27,
+        "executing": 0,
+        "in_memory": 0,
+        "ready": 0,
+        "in_flight": 0,
+        "bandwidth": {
+          "total": 100000000,
+          "workers": {},
+          "types": {}
+        }
+      },
+      "nanny": "tcp://127.0.0.1:38233"
+    },
+    "tcp://127.0.0.1:43857": {
+      "type": "Worker",
+      "id": 6,
+      "host": "127.0.0.1",
+      "resources": {},
+      "local_directory": "/opt/share/run_319685379/dask-worker-space/worker-mhnxsoco",
+      "name": 6,
+      "nthreads": 1,
+      "memory_limit": 67553994240,
+      "last_seen": 1606007932.4645479,
+      "services": {
+        "dashboard": 43009
+      },
+      "metrics": {
+        "cpu": 0.0,
+        "memory": 292048896,
+        "time": 1606007932.3504755,
+        "read_bytes": 0.0,
+        "write_bytes": 0.0,
+        "num_fds": 27,
+        "executing": 0,
+        "in_memory": 0,
+        "ready": 0,
+        "in_flight": 0,
+        "bandwidth": {
+          "total": 100000000,
+          "workers": {},
+          "types": {}
+        }
+      },
+      "nanny": "tcp://127.0.0.1:38629"
+    },
+    "tcp://127.0.0.1:46857": {
+      "type": "Worker",
+      "id": 7,
+      "host": "127.0.0.1",
+      "resources": {},
+      "local_directory": "/opt/share/run_319685379/dask-worker-space/worker-v51f9y0r",
+      "name": 7,
+      "nthreads": 1,
+      "memory_limit": 67553994240,
+      "last_seen": 1606007932.96539,
+      "services": {
+        "dashboard": 46377
+      },
+      "metrics": {
+        "cpu": 0.0,
+        "memory": 290054144,
+        "time": 1606007932.9517097,
+        "read_bytes": 0.0,
+        "write_bytes": 0.0,
+        "num_fds": 27,
+        "executing": 0,
+        "in_memory": 0,
+        "ready": 0,
+        "in_flight": 0,
+        "bandwidth": {
+          "total": 100000000,
+          "workers": {},
+          "types": {}
+        }
+      },
+      "nanny": "tcp://127.0.0.1:35189"
+    }
+  }
+}

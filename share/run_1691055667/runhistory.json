@@ -1,0 +1,269 @@
+{
+  "data": [
+    [
+      [
+        116,
+        null,
+        0,
+        5.555555555555555
+      ],
+      [
+        2147483647.0,
+        0.0,
+        {
+          "__enum__": "StatusType.RUNNING"
+        },
+        0.0,
+        0.0,
+        null
+      ]
+    ],
+    [
+      [
+        117,
+        null,
+        0,
+        5.555555555555555
+      ],
+      [
+        2147483647.0,
+        0.0,
+        {
+          "__enum__": "StatusType.RUNNING"
+        },
+        0.0,
+        0.0,
+        null
+      ]
+    ],
+    [
+      [
+        118,
+        null,
+        0,
+        5.555555555555555
+      ],
+      [
+        2147483647.0,
+        0.0,
+        {
+          "__enum__": "StatusType.RUNNING"
+        },
+        0.0,
+        0.0,
+        null
+      ]
+    ],
+    [
+      [
+        119,
+        null,
+        0,
+        5.555555555555555
+      ],
+      [
+        2147483647.0,
+        28.506417274475098,
+        {
+          "__enum__": "StatusType.CRASHED"
+        },
+        1605966359.2227113,
+        1605966387.7292335,
+        {}
+      ]
+    ],
+    [
+      [
+        120,
+        null,
+        0,
+        5.555555555555555
+      ],
+      [
+        2147483647.0,
+        0.0,
+        {
+          "__enum__": "StatusType.RUNNING"
+        },
+        0.0,
+        0.0,
+        null
+      ]
+    ],
+    [
+      [
+        121,
+        null,
+        0,
+        5.555555555555555
+      ],
+      [
+        2147483647.0,
+        0.0,
+        {
+          "__enum__": "StatusType.RUNNING"
+        },
+        0.0,
+        0.0,
+        null
+      ]
+    ],
+    [
+      [
+        122,
+        null,
+        0,
+        5.555555555555555
+      ],
+      [
+        2147483647.0,
+        0.0,
+        {
+          "__enum__": "StatusType.RUNNING"
+        },
+        0.0,
+        0.0,
+        null
+      ]
+    ],
+    [
+      [
+        123,
+        null,
+        0,
+        5.555555555555555
+      ],
+      [
+        2147483647.0,
+        0.0,
+        {
+          "__enum__": "StatusType.RUNNING"
+        },
+        0.0,
+        0.0,
+        null
+      ]
+    ],
+    [
+      [
+        124,
+        null,
+        0,
+        5.555555555555555
+      ],
+      [
+        2147483647.0,
+        0.0,
+        {
+          "__enum__": "StatusType.RUNNING"
+        },
+        0.0,
+        0.0,
+        null
+      ]
+    ]
+  ],
+  "config_origins": {
+    "116": "Random initial design.",
+    "117": "Random initial design.",
+    "118": "Random initial design.",
+    "119": "Random initial design.",
+    "120": "Random initial design.",
+    "121": "Random initial design.",
+    "122": "Random initial design.",
+    "123": "Random initial design.",
+    "124": "Random initial design."
+  },
+  "configs": {
+    "116": {
+      "distill_epochs": 13,
+      "fallback": false,
+      "lambda_fedprox": 9.477601271344506e-05,
+      "lambda_outlier": 7.295924160633563,
+      "local_epochs": 16,
+      "local_optimizer": "Adam",
+      "mixture_coefficients_base": 0.5960649508598831,
+      "adam_lr": 0.002212814471630098
+    },
+    "117": {
+      "distill_epochs": 2,
+      "fallback": true,
+      "lambda_fedprox": 0.0001722823116197724,
+      "lambda_outlier": 5.965914040249302,
+      "local_epochs": 11,
+      "local_optimizer": "Adam",
+      "mixture_coefficients_base": 0.03850419631527746,
+      "adam_lr": 0.2211296029895048
+    },
+    "118": {
+      "distill_epochs": 14,
+      "fallback": true,
+      "lambda_fedprox": 3.939592059274314e-06,
+      "lambda_outlier": 9.838553479034667,
+      "local_epochs": 8,
+      "local_optimizer": "Adam",
+      "mixture_coefficients_base": 0.8611552285100498,
+      "adam_lr": 0.007843345649487694
+    },
+    "119": {
+      "distill_epochs": 20,
+      "fallback": true,
+      "lambda_fedprox": 1.1231395940530045e-06,
+      "lambda_outlier": 6.005526451037864,
+      "local_epochs": 20,
+      "local_optimizer": "SGD",
+      "mixture_coefficients_base": 0.0036257620832111925,
+      "sgd_lr": 0.00048011255652743664
+    },
+    "120": {
+      "distill_epochs": 9,
+      "fallback": true,
+      "lambda_fedprox": 0.003554028876823384,
+      "lambda_outlier": 8.598293615913569,
+      "local_epochs": 1,
+      "local_optimizer": "SGD",
+      "mixture_coefficients_base": 0.45866450502909795,
+      "sgd_lr": 0.5460158842890195
+    },
+    "121": {
+      "distill_epochs": 8,
+      "fallback": false,
+      "lambda_fedprox": 0.000150168391171677,
+      "lambda_outlier": 4.062071157084766,
+      "local_epochs": 4,
+      "local_optimizer": "Adam",
+      "mixture_coefficients_base": 0.949510799080168,
+      "adam_lr": 1.1377181234247109e-05
+    },
+    "122": {
+      "distill_epochs": 20,
+      "fallback": false,
+      "lambda_fedprox": 3.4167023461504296,
+      "lambda_outlier": 9.374217719441537,
+      "local_epochs": 7,
+      "local_optimizer": "Adam",
+      "mixture_coefficients_base": 0.9126475035649163,
+      "adam_lr": 0.03359355608921449
+    },
+    "123": {
+      "distill_epochs": 8,
+      "fallback": false,
+      "lambda_fedprox": 0.008007683498684382,
+      "lambda_outlier": 6.941306653440704,
+      "local_epochs": 1,
+      "local_optimizer": "SGD",
+      "mixture_coefficients_base": 0.0686512148499584,
+      "sgd_lr": 0.1584044980128805
+    },
+    "124": {
+      "distill_epochs": 12,
+      "fallback": false,
+      "lambda_fedprox": 0.00012967923517564976,
+      "lambda_outlier": 8.751378347169785,
+      "local_epochs": 19,
+      "local_optimizer": "SGD",
+      "mixture_coefficients_base": 0.8400025250880788,
+      "sgd_lr": 0.04092530721375214
+    }
+  }
+}

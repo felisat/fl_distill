@@ -1,0 +1,2 @@
+"CPU Time Used","Estimated Training Performance","Wallclock Time","Incumbent ID","Automatic Configurator (CPU) Time","Configuration..."
+0.000000, 2147483648.000000, 0.000453, 1, 0.000453, distill_epochs='13', fallback='False', lambda_fedprox='9.477601271344506e-05', lambda_outlier='7.295924160633563', local_epochs='16', local_optimizer=''Adam'', mixture_coefficients_base='0.5960649508598831', adam_lr='0.002212814471630098'
